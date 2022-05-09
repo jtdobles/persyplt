@@ -1,0 +1,28 @@
+; ModuleID = 'D'
+source_filename = "D"
+
+@0 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
+@1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@2 = private unnamed_addr constant [4 x i8] c"%f\0A\00", align 1
+@strGlobal = private unnamed_addr constant [15 x i8] c"'Hello World!'\00", align 1
+@strGlobal.1 = private unnamed_addr constant [14 x i8] c"'PLT is hard'\00", align 1
+
+declare i32 @printf(i8*, ...)
+
+define void @main() {
+entry:
+  %alloc = alloca { i8* }, align 8
+  %str_cast_loc = getelementptr inbounds { i8* }, { i8* }* %alloc, i32 0, i32 0
+  store i8* getelementptr inbounds ([15 x i8], [15 x i8]* @strGlobal, i32 0, i32 0), i8** %str_cast_loc, align 8
+  %0 = load { i8* }, { i8* }* %alloc, align 8
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), { i8* } %0)
+  %a = alloca { i8* }, align 8
+  %alloc1 = alloca { i8* }, align 8
+  %str_cast_loc2 = getelementptr inbounds { i8* }, { i8* }* %alloc1, i32 0, i32 0
+  store i8* getelementptr inbounds ([14 x i8], [14 x i8]* @strGlobal.1, i32 0, i32 0), i8** %str_cast_loc2, align 8
+  %1 = load { i8* }, { i8* }* %alloc1, align 8
+  store { i8* } %1, { i8* }* %a, align 8
+  %a3 = load { i8* }, { i8* }* %a, align 8
+  %printf4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), { i8* } %a3)
+  ret void
+}

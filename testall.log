@@ -1,0 +1,12 @@
+
+###### Testing test-*
+./poicent.native tests/test-*.pc > test-*.ll
+bash: ./poicent.native: No such file or directory
+###### FAILED
+
+###### Testing fail-*
+./poicent.native < tests/fail-*.pc 2> fail-*.err >> testall.log
+bash: tests/fail-*.pc: No such file or directory
+diff -b fail-*.err tests/fail-*.err > fail-*.diff
+FAILED fail-*.err differs from tests/fail-*.err
+###### FAILED
