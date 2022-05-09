@@ -171,16 +171,16 @@ if [ $# -ge 1 ]
 then
     files=$@
 else
-    files="test/test-*.mc test/fail-*.mc"
+    files="test/test*.mc"
 fi
 
 for file in $files
 do
     case $file in
-	*test-*)
+	*test*)
 	    Check $file 2>> $globallog
 	    ;;
-	*fail-*)
+	*fail*)
 	    CheckFail $file 2>> $globallog
 	    ;;
 	*)
