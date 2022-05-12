@@ -1,12 +1,10 @@
-(* Ocamllex scanner for D *)
+(* Ocamllex scanner for D, adapted from that of the MicroC compiler. Ref: https://github.com/cwabbott0/microc-llvm *)
 
 { open Dparse }
 
-let digit = ['0'-'9']
-
 rule token = parse
   [' ' '\t' '\r' '\n'] { token lexbuf } (* Whitespace *)
-| "/*"     { comment lexbuf }           (* Multiline comments *)
+| "/*"     { comment lexbuf }           (* Comments *)
 | "//" 	   { singlecomment lexbuf}      (* Single line comments *)
 | '('      { LPAREN }
 | ')'      { RPAREN }
@@ -14,12 +12,14 @@ rule token = parse
 | '}'      { RBRACE }
 | '['      { LBRACKET }
 | ']'      { RBRACKET }
-| '!'  		 { NOT }
+| ';'      { SEMI }
+| ','      { COMMA }
 | '+'      { PLUS }
 | '-'      { MINUS }
 | '*'      { TIMES }
 | '/'      { DIVIDE }
 | '%'      { MOD }
+| '='      { ASSIGN }
 | "+="     { PLUS_ASSIGN }
 | "-="     { MINUS_ASSIGN }
 | "*="     { TIMES_ASSIGN }
@@ -28,37 +28,30 @@ rule token = parse
 | "!="     { NEQ }
 | '<'      { LT }
 | "<="     { LEQ }
-| '>'  		 { GT }
-| ">=" 		 { GEQ }
+| ">"      { GT }
+| ">="     { GEQ }
 | "&&"     { AND }
 | "||"     { OR }
-| '='      { ASSIGN }
-| ';'      { SEMI }
-| '.'      { DOT }
-| ','  		 { COMMA }
+| "!"      { NOT }
 | "if"     { IF }
 | "else"   { ELSE }
-| "for"    { FOR }
 | "while"  { WHILE }
 | "return" { RETURN }
-| "true"   { BOOL_L(true) }
-| "false"  { BOOL_L(false) }
 | "int"    { INT }
-| "float"  { FLOAT }
-| "string" { STRING} 
 | "bool"   { BOOL }
-| "null"   { NULL }
+| "float"  { FLOAT }
+| "string" { STRING }
 | "void"   { VOID }
-| "[]"     { ARRAY }
-| "struct" { STRUCT }
-(*| "switch" { SWITCH }
-| "case"   { CASE }
-| "default" { DEFAULT }*)
-| ['-']?digit+ as lxm { INT_L(int_of_string lxm) }
-| ['-']?digit+['.']digit+ as lxm {FLOAT_L(float_of_string lxm)}
-| "\'" [^''']+ "\'" as lxm { STRING_L(lxm) }
-| ['a'-'z''_' ]+ as lxm { ID(lxm) }
-| ['A'-'Z']['a'-'z' 'A'-'Z']* as structLit { STRUCT_ID(structLit) }
+| "true"   { TRUE }
+| "false"  { FALSE }
+| '.'      { DOT }
+| "fn"     { FUNC }
+| "cont"   { CONT }
+| "exit"   { EXIT }
+| ['0'-'9']+['.']['0'-'9']+ as lxm { FLOATLIT(float_of_string lxm) }
+| ['0'-'9']+ as lxm { INTLIT(int_of_string lxm) }
+| ['\"'](['\x20'-'\x21' '\x23' - '\x7E']* as lxm)['\"'] { STRLIT(lxm) }
+| ['a'-'z' 'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9' '_']* as lxm { ID(lxm) }
 | eof { EOF }
 | _ as char { raise (Failure("illegal character " ^ Char.escaped char)) }
 

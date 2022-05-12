@@ -1,145 +1,137 @@
-/* Ocamlyacc parser for D */
+%{
+open Ast
+%}
 
-%{ open Ast %}
-
-%token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET
-%token NOT
-%token PLUS MINUS TIMES DIVIDE MOD
-%token EQ NEQ LT LEQ GT GEQ
-%token AND OR
-%token ASSIGN SEMI DOT COMMA
-%token IF ELSE FOR WHILE
-%token RETURN PRINTF
-/* TODO: SWITCH CASE DEFAULT TUPLE */
-
-%token TRUE FALSE
-%token INT FLOAT STRING BOOL NULL VOID
-%token ARRAY STRUCT
-%token MAIN
-%token <int> INT_L
-%token <float> FLOAT_L
-%token <string> ID STRING_L
-%token <string> STRUCT_ID
-%token <bool> BOOL_L
+%token SEMI LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET COMMA ARROPEN ARRCLOSE DOT
+%token PLUS MINUS TIMES DIVIDE MOD ASSIGN NOT
+%token PLUS_ASSIGN MINUS_ASSIGN TIMES_ASSIGN DIVIDE_ASSIGN
+%token EQ NEQ LT LEQ GT GEQ TRUE FALSE AND OR
+%token RETURN IF ELSE WHILE INT BOOL FLOAT STRING VOID FUNC
+%token CONT EXIT
+%token <int> INTLIT
+%token <float> FLOATLIT
+%token <string> STRLIT
+%token <string> ID
 %token EOF
 
-%left LBRACKET RBRACKET
-%left LPAREN RPAREN
-%left SEMI
+%nonassoc NOELSE
+%nonassoc ELSE
 %right ASSIGN
-%left AND OR
-%left EQ NEQ LT LEQ GT GEQ
+%left OR
+%left AND
+%left EQ NEQ
+%left LT GT LEQ GEQ
 %left PLUS MINUS TIMES DIVIDE MOD
-%right NOT
+%left PLUS_ASSIGN MINUS_ASSIGN TIMES_ASSIGN DIVIDE_ASSIGN
+%nonassoc INCR DECR
+%right NOT NEG
+%left DOT
 
 %start program
 %type <Ast.program> program
 
 %%
 
-/* add function declarations*/
 program:
-  { [], [] }
-  | program struct_decl { ($2 :: fst $1), snd $1 }
-  | program func_decl { fst $1, ($2 :: snd $1) }
+  decls EOF { $1 }
 
-struct_decl:
-  STRUCT STRUCT_ID LBRACE struct_stmt_list RBRACE SEMI
-  {{ 
-    stname = $2;
-    members = List.rev $4;
-  }}
+decls:
+   /* nothing */ { [], [] }  
+ | decls fdecl { fst $1, ($2 :: snd $1) }
+ | decls stmt { ($2 :: fst $1), snd $1 }
 
-func_decl:
-  dtype ID LPAREN formals_opt RPAREN LBRACE stmt_list RBRACE
-  {{
-    rtyp = $1;
-    fname = $2;
-    formals = $4;
-    fstmts = List.rev $7;
-  }}
-
-struct_stmt_list:
-  /*nothing*/                   { [] }
-  | struct_stmt_list struc_stmt { $2 :: $1 }
-
-struc_stmt:
-  dtype ID SEMI { ($1, $2) }
+fdecl:
+   typ ID LPAREN formals_opt RPAREN LBRACE stmt_list RBRACE
+     { { typ = $1;
+	   fname = $2;
+	   formals = $4;
+       fstmts = List.rev $7;
+     } }
 
 formals_opt:
-  /*nothing*/    { [] }
-  | formals_list { $1 }
+    /* nothing */ { [] }
+  | formal_list   { List.rev $1 }
 
-formals_list:
-    dtype ID                    { [($1, $2)] }
-  | formals_list COMMA dtype ID { ($3, $4) :: $1 }
+formal_list:
+    typ ID                   { [($1,$2)] }
+  | formal_list COMMA typ ID { ($3,$4) :: $1 }
 
-vname:
-  ID { Id($1) }
+typ:
+    INT { Int }
+  | BOOL { Bool }
+  | VOID { Void }
+  | FLOAT { Float }
+  | STRING { String }
+  | typ FUNC { Function($1) }
+  
+type_list:
+    typ            { [$1] }
+  | typ COMMA type_list { $1 :: $3 }
 
 stmt_list:
-  /* nothing */     { [] }
-  | stmt_list stmt  { $2 :: $1 }
+    /* nothing */  { [] }
+  | stmt_list stmt { $2 :: $1 }
 
 stmt:
-    expr SEMI                                  { Expr $1 }
-  | LBRACE stmt_list RBRACE                    { Block(List.rev $2) }
-  | dtype ID SEMI                              { VarDecl($1, $2, Noexpr($1)) }
-  | dtype ID ASSIGN expr SEMI                  { VarDecl($1, $2, $4) }
-  | dtype ID LBRACKET expr RBRACKET SEMI       { ArrayDecl($1, $2, $4, Noexpr($1))}
-  | IF LPAREN expr RPAREN stmt                 { If($3, $5, Block([])) }
-  | IF LPAREN expr RPAREN stmt ELSE stmt       { If($3, $5, $7) }
-  | FOR LPAREN stmt expr SEMI expr RPAREN stmt { For($3, $4, $6, $8) }
-  | WHILE LPAREN expr RPAREN stmt              { While ($3, $5) }
-  | RETURN expr SEMI                           { Return $2 }
+    expr SEMI { Expr $1 }
+  | typ ID SEMI { Dec($1, $2) }
+  | RETURN SEMI { Return Noexpr }
+  | RETURN expr SEMI { Return $2 }
+  | LBRACE stmt_list RBRACE { Block(List.rev $2) }
+  | IF LPAREN expr RPAREN stmt %prec NOELSE { If($3, $5, Block([])) }
+  | IF LPAREN expr RPAREN stmt ELSE stmt    { If($3, $5, $7) }
+  | WHILE LPAREN expr RPAREN stmt { While($3, $5, Expr(Noexpr)) }
+  | CONT SEMI { Cont Noexpr }
+  | EXIT SEMI { Exit Noexpr }
+
+expr_opt:
+    /* nothing */ { Noexpr }
+  | expr          { $1 }
 
 expr:
-  LPAREN expr RPAREN                      { $2 }
-  | NOT expr                              { Not($2) }
-  | INT_L                                 { IntLit($1) }
-  | FLOAT_L                               { FloatLit($1) }
-  | STRING_L                              { StringLit($1) }
-  | BOOL_L                                { BoolLit($1) }
-  | LBRACKET array_opt RBRACKET           { ArrayLit(List.rev $2) }
-  | ID                                    { Id($1) }
-  | vname ASSIGN expr                     { Assign($1, $3) }
-  | ID LBRACKET expr RBRACKET ASSIGN expr { ArrayAssign(Id($1), $3, $6) }
-  | ID LBRACKET expr RBRACKET             {ArrayIndex(Id($1), $3)}
-  | ID DOT ID                             { StructUse(Id($1), Id($3)) }
-  | ID DOT ID ASSIGN expr                 { StructAssign(Id($1), Id($3), $5) }
-  | ID LPAREN args_opt RPAREN             { Call ($1, $3) }
-  | expr PLUS  expr                       { Binop($1, Add, $3) }
-  | expr MINUS  expr                      { Binop($1, Sub, $3) }
-  | expr TIMES  expr                      { Binop($1, Mult, $3) }
-  | expr DIVIDE expr                      { Binop($1, Div, $3) }
-  | expr MOD expr                         { Binop($1, Mod, $3) }
-  | expr EQ  expr                         { Binop($1, Eq, $3) }  
-  | expr NEQ  expr                        { Binop($1, Neq, $3) }
-  | expr LT  expr                         { Binop($1, Lt, $3) }
-  | expr LEQ  expr                        { Binop($1, Leq, $3) }
-  | expr GT  expr                         { Binop($1, Gt, $3) }
-  | expr GEQ  expr                        { Binop($1, Geq, $3) }
-  | expr AND  expr                        { Binop($1, And, $3) }
-  | expr OR  expr                         { Binop($1, Or, $3) }
+    INTLIT   { IntLit($1) }
+  | FLOATLIT { FloatLit($1) }
+  | STRLIT   { StringLit($1) }
+  | TRUE     { BoolLit(true) }
+  | FALSE    { BoolLit(false) }
+  | ID       { Id($1) }
 
-args_opt:
-  /*nothing*/ { [] }
-  | args_list { $1 }
+  | MINUS expr %prec NEG        { Unop(Neg, $2) }
+  | NOT expr                    { Unop(Not, $2) }
+  | expr PLUS PLUS %prec INCR   { Unop(Incr, $1) }
+  | expr MINUS MINUS %prec DECR { Unop(Decr, $1) }
 
-args_list:
-  expr                   { [$1] }
-  | args_list COMMA expr { $3 :: $1 }
+  | expr PLUS   expr { Binop($1, Add,   $3) }
+  | expr MINUS  expr { Binop($1, Sub,   $3) }
+  | expr TIMES  expr { Binop($1, Mult,  $3) }
+  | expr DIVIDE expr { Binop($1, Div,   $3) }
+  | expr MOD expr    { Binop($1, Mod, $3) }
 
-array_opt:
-  /*nothing*/            { [] }
-  | expr                 { [$1] }
-  | array_opt COMMA expr { $3 :: $1 }
+  | ID PLUS_ASSIGN expr   { OpAssign($1, Add, $3) }
+  | ID MINUS_ASSIGN expr  { OpAssign($1, Sub, $3) }
+  | ID TIMES_ASSIGN expr  { OpAssign($1, Mult, $3) }
+  | ID DIVIDE_ASSIGN expr { OpAssign($1, Div, $3) }
+ 
+  | expr EQ  expr { Binop($1, Equal, $3) }
+  | expr NEQ expr { Binop($1, Neq,   $3) }
+  | expr LT  expr { Binop($1, Less,  $3) }
+  | expr LEQ expr { Binop($1, Leq,   $3) }
+  | expr GT  expr { Binop($1, Greater, $3) }
+  | expr GEQ expr { Binop($1, Geq,   $3) }
+  | expr AND expr { Binop($1, And,   $3) }
+  | expr OR  expr { Binop($1, Or,    $3) }
 
-dtype:
-  INT           { Int }
-  | FLOAT       { Float }
-  | STRING      { String }
-  | BOOL        { Bool }
-  | VOID        { Void }
-  | ARRAY dtype { Array($2) }
-  | STRUCT_ID   { Struct($1) }
+  | ID ASSIGN expr     { Assign($1, $3) }
+  | typ ID ASSIGN expr { DecAssign($1, $2, $4) }
+
+  | ID LPAREN actuals_opt RPAREN { Call($1, $3) }
+  
+  | LPAREN expr RPAREN { $2 }
+
+actuals_opt:
+    /* nothing */ { [] }
+  | actuals_list  { List.rev $1 }
+
+actuals_list:
+    expr                    { [$1] }
+  | actuals_list COMMA expr { $3 :: $1 }

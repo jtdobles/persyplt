@@ -1,273 +1,199 @@
-(* Semantic checking for the D compiler *)
-
 open Ast
 open Sast
+open Buildtbl
 
-module StringMap = Map.Make(String)
+let check (statements, functions) = 
 
-let check(structs, functions) = 
-  let add_struct map sd = 
-    let dup_err = "found duplicated struct"
-    and flag_err err = raise (Failure err)
-    and st = sd.stname
-    in match sd with
-        _ when StringMap.mem sd.stname map -> flag_err dup_err
-      | _ -> StringMap.add st sd map
-  in
-  let check_struct st =
-    let symbols = List.fold_left (fun m (ty, name) -> StringMap.add name (ty, name, 0) m) StringMap.empty st.members
-    in
-      {
-        sstname = st.stname;
-        smembers = st.members;
-      }
-  in
+let symbol_table = get_decls (statements, functions) in
+let global_scope = fst symbol_table in
+let function_scopes = snd symbol_table in
 
-  let add_func map fd =
-    let std_lib_err = "function " ^ fd.fname ^ " cannot be redefined"
-    and dup_err = "function already exists: " ^ fd.fname
-    and flag_err err = raise (Failure err)
-    and n = fd.fname
-    in match fd with
-      _ when StringMap.mem n map -> flag_err dup_err
-    | _ -> StringMap.add n fd map
-  in
+let rec check_return slst ret = match slst with 
+    Return _ :: _ -> if ret != Void then true else raise(Failure "Function of type Nah should not have a return statement") 
+  | s :: ss -> check_return ss ret 
+  | [] -> if ret = Void then true else raise (Failure "Function has an empty body at the highest level but returns (?)") in 
 
-  let std_lib_funcs = List.fold_left add_func StringMap.empty [
-    {rtyp = Void; fname = "printi";  formals = [(Int, "args")]; fstmts = []};
-    {rtyp = Void; fname = "printf";  formals = [(Float, "args")]; fstmts = []};
-    {rtyp = Void; fname = "prints";  formals = [(String, "args")]; fstmts = []};
-    {rtyp = Int;  fname = "leng";    formals = [(Array(Int), "args")]; fstmts = []};
-    (*{rtyp = Int; fname = "toint";  formals = [(Float, "args")]; fstmts = []};
-      {rtyp = Float; fname = "tofloat"; formals = [(Int, "args")]; fstmts = []};
-      {rtyp = String; fname = "itostr";  formals = [(Int, "args")]; fstmts = []};
-      {rtyp = String; fname = "ftostr";  formals = [(Float, "args")]; fstmts = []};*)
-  ]
-  in
+let check_expr_scope scop = function 
+    DecAssign(ty, s, _) -> add_symbol_to_tbl s ty scop 
+  | _ -> scop in 
 
-  let function_decls = List.fold_left add_func std_lib_funcs functions in
+let rec check_stmt_scope scop = function 
+    Expr(e) -> check_expr_scope scop e 
+  | Dec(ty, s) -> add_symbol_to_tbl s ty scop
+  | While(p, _, _) -> check_expr_scope scop p
+  | If(p, _, _) -> check_expr_scope scop p
+  | BBlock(sl) -> List.fold_left (fun m f -> check_stmt_scope m f) scop sl
+  | _ -> scop in
 
-  let find_func fn =
-    try StringMap.find fn function_decls
-    with Not_found -> raise (Failure("No such function exist " ^ fn))
-  in
-  (* main func decl checker *)
-  let _ = find_func "main" in
+let ret_func = function 
+    Function(e) -> e 
+  | e           -> e 
+  | _           -> raise (Failure "function return type is flawed")
+in
 
-  let check_function func =
-    let add_var map (tp, name, len) =
-      let dup_err = "duplicate variable found: " ^ name in
-      match (tp, name) with 
-        _ when StringMap.mem name map -> raise (Failure dup_err)
-      | _ -> StringMap.add name (tp, name, len) map
-    in
-    
-    let find_var map name =
-      try StringMap.find name map
-      with Not_found -> raise( Failure("No such variable exists: " ^ name))
-    in
+let check_bool e = 
+  match e with
+      (ty, l) -> if ty = Bool then (ty, l) else raise (Failure "value must be a bool")
+in
 
-    let check_assign lvalt rvalt err =
-      if lvalt = rvalt then lvalt else raise (Failure err)
-    in
+let check_declassign ty1 s ex1 = 
+  match ex1 with
+    | (ty2, _) when ty1 = ty2 -> (ty1, SDecAssign(ty1, s, ex1)) 
+    | (ty2, _) -> raise (Failure ("lvalue " ^ string_of_typ ty1 ^ " not equal to rvalue " ^ string_of_typ ty2)) 
+in
 
-    let type_of_identifier s symbols =
-      let (ty, _, _) = try StringMap.find s symbols 
-                       with Not_found -> raise( Failure("No such ID exists: " ^ s))
-      in ty
-    in
+let check_assign lvaluet rvaluet  =
+  if lvaluet = rvaluet then lvaluet else raise (Failure "wrong assignment")  
+in
 
-    let rec check_expr map e = match e with
-      Noexpr(ty) ->    (ty, SNoexpr(ty), map)
-      | Not(e) as notEx-> let (t, e', map') = check_expr map e in
-        if t != Bool then 
-          raise(Failure("bool expr not found in " ^ string_of_expr notEx))
-        else (Bool, SNot((t, e')), map')
-      | IntLit l ->    (Int, SIntLit l, map)
-      | FloatLit l ->  (Float, SFloatLit l, map)
-      | StringLit l -> (String, SStringLit l, map)
-      | BoolLit l ->   (Bool, SBoolLit l, map)
-      | ArrayLit(l) ->
-        let array_body = List.map (check_expr map) l in
-        let array_type, _, _ = List.nth array_body 0 in
-            (Array array_type, SArrayLit(List.map (fun (t, sx, _) -> (t, sx)) array_body), map)
-      | Id s -> (type_of_identifier s map, SId s, map)
-      | Assign(v, e) ->
-        let lt, vname, map1 = find_name v map "assignment err" in
-        let rt, ex, map2 = check_expr map1 e in
-        (check_assign lt rt "data type missmatch", SAssign((lt, vname), (rt, ex)), map2)
+let rec check_expr scop sscop e = match e with
+    IntLit l -> (Int, SIntLit l)
+  | BoolLit l -> (Bool, SBoolLit l) 
+  | FloatLit l -> (Float, SFloatLit l)
+  | StringLit l -> (String, SStringLit l)
+  | Noexpr -> (Void, SNoexpr)
+  | Id l -> (toi scop l, SId l)
+  | Binop(e1, op, e2) as e -> 
+    let (t1, e1') = check_expr scop sscop e1 
+    and (t2, e2') = check_expr scop sscop e2 in
+    let same = t1 = t2 in
+    let ty = match op with
+        Add | Sub | Mult | Div | Mod when same && t1 = Int   -> Int
+      | Add | Sub | Mult | Div | Mod when same && t1 = Float -> Float
+      | Equal | Neq                  when same               -> Bool
+      | Less | Leq | Greater | Geq   when same && (t1 = Int || t1 = Float) -> Bool
+      | And | Or                     when same && t1 = Bool -> Bool
+      | _ -> raise (Failure ("illegal binary operator " ^
+                    string_of_typ t1 ^ " " ^ string_of_op op ^ " " ^
+                    string_of_typ t2 ^ " in " ^ string_of_expr e))
+    in (ty, SBinop((t1, e1'), op, (t2, e2')))
+  | Unop(uop, e) as ex -> 
+    let (t, e') = check_expr scop sscop e in
+    let ty = match uop with
+        Neg | Incr | Decr when t = Int || t = Float -> t
+      | Not when t = Bool -> Bool
+      | _ -> raise (Failure ("illegal unary operator " ^ 
+                            string_of_uop uop ^ string_of_typ t ^
+                            " in " ^ string_of_expr ex))
+    in (ty, SUnop(uop, (t, e')))
+  | Assign(s, e) -> 
+    let lt = toi scop s 
+    and (rt, e') = check_expr scop sscop e in
+    (check_assign lt rt, SAssign(s, (rt, e')))
 
-      | OpAssign(v, op, e) ->
-        let lt, vname, map1 = find_name v map "assignment err" in
-        let rt, ex, map2 = check_expr map1 e in
-        (check_assign lt rt "data type missmatch", SOpAssign((lt, vname), (rt, ex)), map2)
+  | OpAssign(s, op, e) -> 
+    let (t, e1) = check_expr scop sscop e in 
+    if t = (toi scop s) then (t, SOpAssign(s, op, (t, e1))) else raise (Failure "types not the same") 
 
-      | ArrayAssign(v, i, e) ->
-        let strName = match v with
-          Id i -> i
-          | _ -> raise(Failure("Invalid array identifier: " ^ string_of_expr v))
-        in
-        let lt, vname, map1 = find_name v map "assignment err" in
-        let rt, ex, map2 = check_expr map1 e in
-        let it, ix, map3 = check_expr map2 i in
-        let (idx_typ, sidx, _) = check_expr map i in
-          let _ = match sidx with
-            SIntLit l ->
-              let (_, _, arsize) = StringMap.find strName map in
-              if l >= arsize && arsize != 0 then raise(Failure("Array Index out ouf bound: " ^ string_of_int l))
-              else l
-            | _ -> 0
-          in
-        let elem_type = (match lt with
-            Array(t) -> t
-            | _ -> raise(Failure("got type: " ^ string_of_typ lt))
-            )
-        in
-        (check_assign elem_type rt "array type missmatch", SArrayAssign((lt, vname), (it, ix), (rt, ex)), map3)
+  | DecAssign(ty, l, expr1) -> (match ty, l, expr1 with
+    | _ -> check_declassign ty l (check_expr scop sscop expr1)
+    )
+  | Call(fname, args) -> 
+    let eval_list = List.map (check_expr scop sscop) args in 
+    let key_func = key_string fname eval_list in  
+    let fd = StringMap.find key_func function_scopes in
+    let param_length = StringMap.cardinal fd.formals.variables in
+    if List.length args != param_length then
+    raise (Failure ("expecting " ^ string_of_int param_length ^ 
+              " arguments in function call" ))
+    else let check_call (_, ft) e = 
+    let (et, e') = check_expr scop sscop e in 
+    (check_assign ft et, e')
+    in 
+    let args' = List.map2 check_call (StringMap.bindings fd.formals.variables) args
+    in (ret_func fd.ret_typ, SCall(fname, args')) 
+  | _  -> raise (Failure "expression is not an expression")  
+in
 
-      | ArrayIndex(arname, idx) ->
-        let strName = match arname with
-          Id i -> i
-          | _ -> raise( Failure("Invalid array identifier: " ^ string_of_expr arname))
-        in
-        let (typ, sid, map1) = check_expr map arname in
-        let (idx_typ, sidx, map2) = check_expr map1 idx in
-        let _ = match sidx with
-          SIntLit l ->
-            let (_, _, size) = StringMap.find strName map in
-            if l >= size && size != 0 then raise(Failure("Array Index out ouf bound: " ^ string_of_int l))
-            else l
-          | _ -> 0
-        in
+let rec check_stmt scop loopscop s =
+  let new_scope = {
+    variables = StringMap.empty;
+    parent = Some(scop);
+  } in match s with 
+  Expr e -> SExpr (check_expr scop loopscop e) 
+  | If(p, b1, b2) as i -> 
+    let scop = get_expr_decls scop p in
+    let pred = check_bool (check_expr scop loopscop p) 
+    and t = check_stmt scop loopscop b1
+    and f = check_stmt scop loopscop b2 in SIf(pred, t, f) 
+  | While(p, s, inc) -> 
+      let scop = get_expr_decls scop p in
+      let pred = check_bool (check_expr scop loopscop p)
+      and loop = check_stmt scop true s in SWhile(pred, loop, check_stmt scop loopscop inc) 
+  | Cont e -> if loopscop then SCont (check_expr scop loopscop e) else raise (Failure "cont not in a loop")  
+  | Exit e -> if loopscop then SExit (check_expr scop loopscop e) else raise (Failure "exit not in a loop") 
+  | Return _ -> raise (Failure "return outside a function")
+  | Block sl -> 
+    let rec check_stmt_list bscop = function
+        [Return _ as s] -> [check_stmt bscop loopscop s]
+      | Return _ :: _   -> raise (Failure "nothing may follow a return")
+      | s :: ss         -> check_stmt bscop loopscop s :: check_stmt_list bscop ss 
+      | [] -> []
+    in SBlock(check_stmt_list (List.fold_left (fun m f -> check_stmt_scope m f) new_scope sl) sl)
+  | BBlock sl -> 
+    SBlock(List.map (check_stmt scop loopscop) sl)
+    | Dec(ty, l) -> SDec(ty, l)
+  | _ as s -> raise (Failure ("statement " ^ string_of_stmt s ^ " is not a statement"))
+in
 
-        let elem_type = match typ with
-          Array(t) -> t
-          | _ -> raise(Failure("Unexpected type: " ^ string_of_typ typ))
-        in
-        (elem_type, SArrayIndex((typ, sid), (idx_typ, sidx)), map2)
-      | StructAssign(v, m, e) ->
-        let strName = match v with
-          Id i -> i
-          | _ -> raise(Failure("Invalid struct identifier: " ^ string_of_expr v)) 
-        in
-        let lt, vname, map1 = find_name v map "assignment err" in
-        let rt, ex, map2 = check_expr map1 e in
-      (check_assign Ast.Int Ast.Int "struct type missmatch", SStructAssign((lt, vname), m, (rt, ex)), map2)
-      | StructUse(v, m) ->
-        let strName = match v with
-          Id i -> i
-          | _ -> raise(Failure("Invalid struct identifier: " ^ string_of_expr v))
-        in
-        let lt, vname, map1 = find_name v map "assignment err" in
-      (Int, SStructUse((lt, vname), m), map1)
-      (*| Unop(uop, e) as ex ->
-          let (t, e') = check_expr map e in
-          let ty = match uop with
-            Incr | Decr when t = Int || t = Float -> t
-            | _ -> raise(Failure("illegal unary op " ^ string_of_uop uop ^ string_of_typ t ^ " in " ^ string_of_expr ex)) 
-          in 
-          (ty, SUnop(uop, (t, e')), map')*)
-      | Binop(e1, op, e2) as ex ->
-        let (t1, e1', map') = check_expr map e1 in
-        let (t2, e2', map'') = check_expr map' e2 in
-        let same = t1 = t2 in
-        let ty = match t1 with 
-          _ -> match op with
-            Add | Sub | Mult | Div | Mod when same && t1 = Int -> Int
-            | Add | Sub | Mult | Div     when same && t1 = Float -> Float
-            | Add                        when same && t1 = String -> String
-            | Eq | Neq                   when same -> Bool
-            | Lt | Leq | Gt | Geq        when same && (t1 = Int || t1 = Float) -> Bool
-            | And | Or                   when same && t1 = Bool -> Bool
-            | _ -> raise (Failure ("Illegal binary operator " ^ string_of_typ t1 ^ " " ^ string_of_op op ^ " " ^ string_of_typ t2 ^ " in " ^ string_of_expr ex))
-        in
-        (ty, SBinop((t1, e1'), op, (t2, e2')), map'')
-      | Call(fname, args) as call ->
-          let fd = find_func fname in
-          let param_len = List.length fd.formals in
-          if List.length args != param_len then
-            raise(Failure("expecting to have " ^ string_of_int param_len ^ " arguments in " ^ string_of_expr call))
-          else let check_call (ft, _) e =
-            let (et, e', map') = check_expr map e in
-            let arg_err = "Illegal argument: " ^ string_of_typ et ^ "; expect to have " ^ string_of_typ ft ^ " in " ^ string_of_expr e
-            in
-            (check_assign ft ft arg_err, e')
-          in 
-          let args' = List.map2 check_call fd.formals args in 
-          (fd.rtyp, SCall(fname, args'), map)
-    and find_name (name) map err = match name with
-          Id _ -> check_expr map name
-          | _ -> raise(Failure("find_name err"))
-    in
-    let check_bool map e =
-      let (t', e', map') = check_expr map e
-      and err = "Expected boolran expression in " ^ string_of_expr e 
-      in
-      if Bool != Bool then raise(Failure err) else (t', e')
-    in
-    let rec check_stmt map st = match st with
-      | Block sl ->
-        let rec check_stmt_list map sl = match sl with
-          [] -> ([], map)
-          | [Return _ as s] -> ([fst (check_stmt map s)], map)
-          | Return _ :: _ -> raise(Failure "empty return")
-          | Block sl :: ss -> check_stmt_list map (sl @ ss)
-          | s :: ss -> let cs, m' = check_stmt map s in
-                      let csl, m'' = check_stmt_list m' ss in
-                      (cs :: csl, m'')
-        in
-        (SBlock(fst (check_stmt_list map sl)), map)
-      | VarDecl(tp, id, e) ->
-        let (rty, sexpr, map') = check_expr map e in
-        let arg_err = "illegal argument found" in
-        let len = match e with
-          Ast.ArrayLit art -> List.length art
-          | _ -> 0 
-        in
-        let nmap = add_var map' (tp, id, len) in
-        let r_expr = (rty, sexpr) in
-        (SVarDecl(tp, id, r_expr), nmap)
-      | ArrayDecl(t, id, e1, e) ->
-        let(ty', e1', _) = check_expr map e1 in
-          if ty' != Ast.Int then raise(Failure("Integer is expected but program received: " ^ string_of_typ t))
-          else
-            let len = match e1 with
-              Ast.IntLit t -> t
-            in
-        let nmap = add_var map (t, id, len) in
-        let (t2, sx2, map') = check_expr map e in
-        let r2 = (t2, sx2) in
-        (SArrayDecl(t, id, (ty', e1'), r2), nmap)
-      | If(cond, s1, s2) -> let sthen, _ = check_stmt map s1 in
-                            let slese, _ = check_stmt map s2 in
-                            (SIf(check_bool map cond, sthen, slese), map)
-      | For(e1, e2, e3, stmtlst) -> let (st1, m') = check_stmt map e1 in
-                                    let (ty3, sx3, m'') = check_expr m' e3 in
-                                    SFor(st1, check_bool m'' e2, (ty3, sx3), fst (check_stmt m'' stmtlst)), m''
-      | While(cond, stmtlst) -> SWhile(check_bool map cond, fst (check_stmt map stmtlst)), map
-      (*| Switch(cond, stmtlst) -> SSwitch(check_bool map cond, fst (check_stmt map stmtlst)), map
-      | Case(cond, stmtlst) -> SSwitch(check_bool map cond, fst (check_stmt map stmtlst)), map
-      | Default(cond, stmtlst) -> SDefault(check_bool map cond, fst (check_stmt map stmtlst))*)
-      | Expr e -> let (ty, sexpr, nmap) = check_expr map e in 
-                  (SExpr (ty, sexpr), nmap)
-      | Return e -> let (t, e', map') = check_expr map e in
-                    if t = func.rtyp then (SReturn (t, e'), map')
-                    else raise(Failure("return type expected to be " ^ string_of_typ func.rtyp ^ "but " ^ string_of_typ t ^ " was given; error in " ^ string_of_expr e))
-      | _ -> raise(Failure("Statement match failed"))
-    in
-    
-    let symbols = List.fold_left (fun m (ty, name) -> StringMap.add name (ty, name, 0) m) StringMap.empty func.formals
-    in
-      {
-        srtyp = func.rtyp;
-        sfname = func.fname;
-        sformals = func.formals;
-        sfstmts = match fst (check_stmt symbols (Block(func.fstmts))) with
-          SBlock(sl) -> sl
-          | _ -> let block_err = "Block building failed" in
-          raise(Failure block_err)
-      }
-  in (* check_func in *)
-  let ssfuncs = List.map check_function functions in
-  let sstructs = List.map check_struct structs in
-  (sstructs, ssfuncs)
+let rec check_stmt_func scop loopscop ret = 
+  let new_scope = {
+    variables = StringMap.empty;
+    parent = Some(scop);
+  } in function 
+    Expr e -> SExpr (check_expr scop loopscop e) 
+  | If(p, b1, b2) -> SIf(check_bool (check_expr scop loopscop p), check_stmt_func scop loopscop ret b1,check_stmt_func scop loopscop ret b2)
+  | While(p, s, inc) -> 
+    SWhile(check_bool (check_expr scop loopscop p), check_stmt_func new_scope true ret s, check_stmt scop loopscop inc)
+    | Return e -> let (t, e') = check_expr scop loopscop e in 
+    if t = ret then SReturn (t, e') 
+    else raise (
+    Failure ("return gives " ^ string_of_typ t ^ " expected " ^
+      string_of_typ ret ^ " in " ^ string_of_expr e)) 
+  | Cont e -> if loopscop then SCont (check_expr scop loopscop e) else raise (Failure "cont not in aloop")  
+  | Exit e -> if loopscop then SExit (check_expr scop loopscop e) else raise (Failure "exit not in a loop") 
+  | Block sl -> 
+    let rec check_stmt_list bscop = function
+        [Return _ as s] -> [check_stmt_func bscop loopscop ret s]
+      | Return _ :: _   -> raise (Failure "nothing may follow a return")
+      | s :: ss         -> check_stmt_func bscop loopscop ret s :: check_stmt_list bscop ss
+      | []              -> []
+    in SBlock(check_stmt_list (List.fold_left (fun m f -> check_stmt_scope m f) new_scope sl) sl)
+  | BBlock sl -> SBlock(List.map (check_stmt_func scop loopscop ret) sl)
+  | Dec(ty, l) -> SDec(ty, l)
+  | _ as s -> raise (Failure ("statement " ^ string_of_stmt s ^ " is not a statement"))
+in
+
+let check_func (fd : func_decl) = 
+  if check_return fd.fstmts (ret_func fd.typ) then 
+    let key_func = key_string fd.fname fd.formals in 
+      let current_function = StringMap.find key_func function_scopes in 
+      { styp = ret_func fd.typ;
+        sfname = fd.fname;
+        sformals = fd.formals;
+        sfstmts = match check_stmt_func current_function.locals false (ret_func fd.typ) (Block fd.fstmts) with
+	          SBlock(sl) -> sl
+          | _ -> raise (Failure ("internal error: block didn't become a block?"))
+    }
+    else raise (Failure "there is not return statement at the highest level of the function")
+in 
+
+(* SAST of semantically-check statements and functions *)
+let sstatements = List.map (check_stmt global_scope false) statements in
+let sfuncs = List.map check_func functions in
+
+(* def implicit main function if it's not defined; main takes int like C *)
+let rec has_main sfuncs = match sfuncs with
+    [] -> false
+  | sfd :: _ when sfd.sfname = "main" && sfd.styp = Int -> true
+  | sfd :: _ when sfd.sfname = "main" -> raise (Failure ("Error: function main must have eturn type int, not type " ^ string_of_typ sfd.styp))
+  | _ :: tail -> has_main tail in
+
+let updated_sfuncs = if has_main sfuncs then sfuncs else
+  { styp = Int;
+    sfname = "main";
+    sformals = [];
+    sfstmts = List.rev sstatements;
+  } :: sfuncs in
+
+(sstatements, updated_sfuncs)

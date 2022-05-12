@@ -1,134 +1,128 @@
-type op = Add | Sub | Mult | Div | Mod | Eq | Neq | Lt | Leq | Gt | Geq | And | Or
-type typ = Int | Float | String | Bool | Void | Array of typ | Struct of string 
-type assignment = Assign 
+type op = Add | Sub | Mult | Div | Mod | Equal | Neq | Less | Leq | Greater | Geq |
+          And | Or
 
-type expr =
-  Noexpr of typ
-  | Not of expr
-  | IntLit of int
-  | FloatLit of float
-  | StringLit of string
-  | BoolLit of bool
-  | ArrayLit of expr list
-  | Id of string
-  | Var of string
-  | Assign of expr * expr
-  | ArrayAssign of expr * expr * expr
-  | ArrayIndex of expr * expr
-  | StructAssign of expr * expr * expr
-  | StructUse of expr * expr
-  | Binop of expr * op * expr
-  | Call of string * expr list
+type uop = Neg | Not | Incr | Decr
 
-(* var binding *)
+type typ = 
+    Int 
+  | Bool 
+  | Void
+  | Float
+  | String
+  | Function of typ
+
 type bind = typ * string
 
-type stmt = 
+type expr =
+    IntLit of int
+  | BoolLit of bool
+  | FloatLit of float
+  | StringLit of string
+
+  | Id of string
+  | Unop of uop * expr
+  | Binop of expr * op * expr
+
+  | Assign of string * expr
+  | OpAssign of string * op * expr
+  | DecAssign of typ * string * expr
+  | Call of string * expr list
+
+  | Noexpr
+
+type stmt =
   Block of stmt list
-  | VarDecl of typ * string * expr
-  | ArrayDecl of typ * string * expr * expr
-  | If of expr * stmt * stmt
-  | For of stmt * expr * expr * stmt
-  | While of expr * stmt
-  | Print of expr
+  | BBlock of stmt list
   | Expr of expr
+  | Dec of typ * string
   | Return of expr
-  (* TODO: switch/case/default *)
+  | If of expr * stmt * stmt
+  | While of expr * stmt * stmt
+  | Cont of expr
+  | Exit of expr
 
-
-type struct_decl = {
-  stname: string;
-  members: bind list;
-}
-
-(* func_decl *)
 type func_decl = {
-  rtyp: typ;
-  fname: string;
-  formals: bind list;
-  fstmts: stmt list;
-}
+    typ : typ;
+    fname : string;
+    formals : bind list;
+    fstmts : stmt list;
+  }
 
-type program = struct_decl list * func_decl list
+type program = stmt list * func_decl list
 
-let rec string_of_typ = function
-  Int -> "int"
-  | Float -> "float"
-  | String -> "string"
-  | Bool -> "bool"
-  | Void -> "void"
-  | Array(t) -> string_of_typ(t) ^ " array"
-  | Struct(t) -> t
-  (* TODO: tuple, void implementation *)
+let string_of_uop = function
+    Neg -> "-"
+  | Not -> "!"
+  | Incr -> "++"
+  | Decr -> "--"
 
-(* Pretty-printing functions *)
 let string_of_op = function
-  Add -> "+"
+    Add -> "+"
   | Sub -> "-"
   | Mult -> "*"
   | Div -> "/"
   | Mod -> "%"
-  | Eq -> "=="
+  | Equal -> "=="
   | Neq -> "!="
-  | Lt -> "<"
+  | Less -> "<"
   | Leq -> "<="
-  | Gt -> ">"
+  | Greater -> ">"
   | Geq -> ">="
   | And -> "&&"
   | Or -> "||"
 
+let rec string_of_typ = function
+  Int -> "int"
+  | Bool -> "bool"
+  | Void -> "void"
+  | Float -> "float"
+  | String -> "string"
+  | Function(t) -> string_of_typ t ^ " fn"
+
 let rec string_of_expr = function
-  Noexpr(t) -> ""
-  | Not(v) -> "!" ^ string_of_expr v
-  | IntLit(i) -> string_of_int i
-  | FloatLit(fl) -> string_of_float fl
-  | StringLit(s) -> s
+    IntLit(l) -> string_of_int l
   | BoolLit(true) -> "true"
   | BoolLit(false) -> "false"
-  | ArrayLit(l) -> "[" ^ (String.concat ", " (List.map string_of_expr l)) ^ "]"
+  | FloatLit(l) -> string_of_float l
+  | StringLit(s) -> "\"" ^ s ^ "\""
+  | Noexpr -> ""
+
   | Id(s) -> s
-  | Assign(v, e) -> string_of_expr v ^ " = " ^ string_of_expr e
-  | ArrayAssign(v, i, e) -> string_of_expr v ^ "[" ^ string_of_expr i ^ "]" ^ " = " ^ string_of_expr e
-  | ArrayIndex(v, i) -> string_of_expr v ^ "[" ^ string_of_expr i ^ "]"
-  | StructAssign(v, m, e) -> string_of_expr v ^ "." ^ string_of_expr m ^ " = " ^ string_of_expr e ^ ";"
-  | StructUse(v, m) -> string_of_expr v ^ "." ^ string_of_expr m
+  | Unop(o, e) -> string_of_uop o ^ string_of_expr e
   | Binop(e1, o, e2) ->
-    string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
-  | Call(f, el) ->
-      f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
-  | _ -> "no expr available"
+      string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
+
+  | Assign(v, e) -> v ^ " = " ^ string_of_expr e
+  | OpAssign(v, o, e) -> v ^ " " ^ string_of_op o ^ "= " ^ string_of_expr e
+  | DecAssign(t, v, e) -> string_of_typ t ^ " " ^ v ^ " = " ^ string_of_expr e
+  
+  | Call(f, el) -> f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
 
 let rec string_of_stmt = function
   Block(stmts) ->
-  "{\n" ^ String.concat "" (List.map string_of_stmt stmts) ^ "}\n"
-  | VarDecl(t, s1, Noexpr(ty)) -> string_of_typ t ^ " " ^ s1 ^ ";\n"
-  | VarDecl(t, s1, e1) -> string_of_typ t ^ " " ^ s1 ^ " = " ^ string_of_expr e1 ^ ";\n"
-  | ArrayDecl(t, v, e, Noexpr(ty)) -> string_of_typ t ^ " " ^ v ^ "[" ^ string_of_expr e ^ "];\n"
-  | If(e, s1, s2) ->  "if (" ^ string_of_expr e ^ ")\n" ^ string_of_stmt s1 ^ "else\n" ^ string_of_stmt s2
-  | For(e1, e2, e3, s) -> "for (" ^ string_of_stmt e1 ^ "; " ^ string_of_expr e2 ^ "; " ^ string_of_expr e3 ^ ") " ^ string_of_stmt s
-  | While(e, s) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
-  (*| Switch(e, s) -> "switch (" ^ string_of_expr e ^ ")\n" ^ string_of_stmt s
-  | Case(e, s) -> "case :" ^ string_of_expr e ^ ")\n" ^ string_of_stmt s
-  | Default(s) -> "default: " ^ string_of_stmt s*)
-  | Expr(expr) -> string_of_expr expr ^ ";\n"
-  | Return(expr) -> "return " ^ string_of_expr expr ^ ";\n"
-  | _ -> "no matching stmt"
-  (* TODO: switch/case/default, tuple *)
+    "{\n" ^ String.concat "" (List.map string_of_stmt stmts) ^ "}\n"
+  | BBlock(stmts) -> "\n" ^ String.concat "" (List.map string_of_stmt stmts) ^ "\n" 
+  | Expr(expr) -> string_of_expr expr ^ ";\n";
+  | Dec(t, v) -> string_of_typ t ^ " " ^ v ^ ";\n";
+  | Return(expr) -> "return " ^ string_of_expr expr ^ ";\n";
+  | If(e, s, Block([])) -> "if (" ^ string_of_expr e ^ ")\n" ^ string_of_stmt s
+  | If(e, s1, s2) ->  "if (" ^ string_of_expr e ^ ")\n" ^
+      string_of_stmt s1 ^ "else\n" ^ string_of_stmt s2
+  | Cont(expr) -> "cont " ^ string_of_expr expr ^ ";\n";
+  | Exit(expr) -> "exit " ^ string_of_expr expr ^ ";\n";
+  | While(e, s, _) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
 
-let string_of_structs stdecl =
-  "struct " ^ stdecl.stname ^ "{\n" ^ String.concat "" (List.map snd stdecl.members) ^ "};\n"
+  let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"
 
-let string_of_vdecl = function
-  VarDecl(t, id, Noexpr(ty)) -> string_of_typ t ^ " " ^ id ^ ";\n"
-  | VarDecl(t, id, e) -> string_of_typ t ^ " " ^ id ^ " = " ^ string_of_expr e ^ ";\n"
-
-let string_of_fdecl fdecl =
-  string_of_typ fdecl.rtyp ^ " " ^
-  fdecl.fname ^ "(" ^ String.concat ", " (List.map snd fdecl.formals) ^
-  ")\n{\n" ^
-  String.concat "" (List.map string_of_stmt fdecl.fstmts) ^
-  "}\n"
-
-let string_of_program (structs, funcs) =
-  String.concat "" (List.map string_of_structs structs) ^ "\n" ^
-  String.concat "\n" (List.map string_of_fdecl funcs)
+  let string_of_fdecl fdecl =
+    string_of_typ fdecl.typ ^ " " 
+    ^ fdecl.fname 
+    ^ "(" ^ String.concat ", " (List.map snd fdecl.formals) 
+    ^ ")\n{\n" 
+    ^ String.concat "" (List.map string_of_stmt fdecl.fstmts) 
+    ^ "}\n"
+  
+  let string_of_program (sts, funcs) =
+    (* Do we reverse to pretty-print? Is upside down stuff an indicator of the AST *)
+    String.concat "" (List.map string_of_fdecl funcs) ^ "\n" ^
+    String.concat "\n" (List.map string_of_stmt (List.rev sts))
