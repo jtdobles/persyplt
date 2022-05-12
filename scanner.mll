@@ -20,6 +20,10 @@ rule token = parse
 | '*'      { TIMES }
 | '/'      { DIVIDE }
 | '%'      { MOD }
+| "+="     { PLUS_ASSIGN }
+| "-="     { MINUS_ASSIGN }
+| "*="     { TIMES_ASSIGN }
+| "/="     { DIVIDE_ASSIGN } 
 | "=="     { EQ }
 | "!="     { NEQ }
 | '<'      { LT }
@@ -45,7 +49,7 @@ rule token = parse
 | "bool"   { BOOL }
 | "null"   { NULL }
 | "void"   { VOID }
-| "ar"     { ARRAY }
+| "[]"     { ARRAY }
 | "struct" { STRUCT }
 (*| "switch" { SWITCH }
 | "case"   { CASE }

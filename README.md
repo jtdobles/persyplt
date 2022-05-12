@@ -121,20 +121,18 @@ source ~/.bash_profile
 7. [Memory and Pointers](#7-memory-and-pointers)
 8. [Standard Library](#8-standard-library)
    1. [Arrays](#81-arrays)
-   1. [append()](<#811-append()>)
-   1. [prepend()](<#812-prepend()>)
-   1. [remove()](<#813-remove()>)
-   1. [join()](<#814-join()>)
-   1. [Strings](#82-strings)
-   1. [toupper()](<#821-toupper()>)
-   1. [tolower()](<#822-tolower()>)
-   1. [Miscellaneous](#83-miscellaneous)
-   1. [leng()](<#831-leng()>)
-   1. [printf()](<#832-printf()>)
-   1. [fopen()](<#833-fopen()>)
-   1. [fread()](<#834-fread()>)
-   1. [fwrite()](<#835-fwrite()>)
-   1. [fclose()](<#836-fclose()>)
+      1. [append()](<#811-append()>)
+      2. [prepend()](<#812-prepend()>)
+      3. [remove()](<#813-remove()>)
+      4. [join()](<#814-join()>)
+   2. [Strings](#82-strings)
+      1. [toupper()](<#821-toupper()>)
+      2. [tolower()](<#822-tolower()>)
+   3. [Miscellaneous](#83-miscellaneous)
+      1. [leng()](<#831-leng()>)
+      2. [printi()](<#832-printi()>)
+      3. [printf()](<#832-printf()>)
+      4. [prints()](<#832-prints()>)
 9. [Sample Code](#9-sample-code)
 
 # `1` Introduction
@@ -251,11 +249,11 @@ float y = 1.;
 
 ### `3.1.3` string
 
-The `string` data type represents a sequence of characters surrounded by either single quotes `' '` or double quotes `" "`.
+The `string` data type represents a sequence of characters surrounded by single quotes `' '`.
 
 ```c
-string a = "D is cool";
-string b = 'hello World!';
+string a = 'D is cool';
+string b = 'Hello World!';
 ```
 
 Our language support string as a data type, meaning that a single character is considered as an array of characters with length one.
@@ -293,12 +291,11 @@ Example:
 
 ```c
 // empty array
-int[] a;
-char[][] b;
+[] int a;
 
 // array size being implicitly defined by the length of literals
-int[] arr = [0, 2, 4, 6];
-string[] ar = ["hi", "hello", "sup"];
+[] int arr = [0, 2, 4, 6];
+[] string ar = ["hi", "hello", "sup"];
 ```
 
 An array can be accessed and modified with indices in square brackets, which it must be integers within the range [0, arrayLength - 1).
@@ -1258,15 +1255,49 @@ int arr_length = leng({1,2,3,4}); //arr_length=4
 int tupl_length = leng(tupl); //tupl_length=3
 ```
 
-### `8.3.2` printf()
+### `8.3.2` printi()
 
-The `printf()` prints the given string to a new line of standard output. It throws errors if it encounters a type other than string, and prints empty new line if there's no input given. To print non-string type values, you can type cast desired value to string.
+The `printi()` prints the given integer input to a new line of standard output. It throws errors if it encounters a type other than int.
 
 ```c
-printf("Hello World!");
-printf();
-a = (str) 10;
+printi(2022);
+int a = 1 + 4;
 printf(a);
+```
+
+stdout:
+
+```c
+2022
+5
+```
+
+### `8.3.3` printf()
+
+The `printf()` prints the given float to a new line of standard output. It throws errors if it encounters a type other than float.
+
+```c
+printf(1.2);
+float a = 10.4;
+printf(a);
+```
+
+stdout:
+
+```c
+1.2
+10.4
+```
+
+### `8.3.4` prints()
+
+The `prints()` prints the given string input to a new line of standard output. It throws errors if it encounters a type other than string.
+
+```c
+prints("Hello World!");
+prints();
+string a = "I'm sleepy";
+prints(a);
 ```
 
 stdout:
@@ -1274,24 +1305,8 @@ stdout:
 ```c
 Hello World!
 
-10
+I'm sleepy
 ```
-
-### `8.3.3` fopen()
-
-TBD; drop this method if we don't have enough time to implement
-
-### `8.3.4` fread()
-
-TBD; drop this method if we don't have enough time to implement
-
-### `8.3.5` fwrite()
-
-TBD; drop this method if we don't have enough time to implement
-
-### `8.3.6` fclose()
-
-TBD; drop this method if we don't have enough time to implement
 
 [↩️ Back to Contents](#0-contents)
 

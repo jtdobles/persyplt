@@ -34,10 +34,14 @@ let check(structs, functions) =
   in
 
   let std_lib_funcs = List.fold_left add_func StringMap.empty [
-    (*{rtyp = Void; fname = "printf";  formals = [(Int, "args")]; fstmts = []};
+    {rtyp = Void; fname = "printi";  formals = [(Int, "args")]; fstmts = []};
     {rtyp = Void; fname = "printf";  formals = [(Float, "args")]; fstmts = []};
-    {rtyp = Void; fname = "printf";  formals = [(Bool, "args")]; fstmts = []};*)
-    {rtyp = Void; fname = "printf";  formals = [(String, "args")]; fstmts = []};
+    {rtyp = Void; fname = "prints";  formals = [(String, "args")]; fstmts = []};
+    {rtyp = Int;  fname = "leng";    formals = [(Array(Int), "args")]; fstmts = []};
+    (*{rtyp = Int; fname = "toint";  formals = [(Float, "args")]; fstmts = []};
+      {rtyp = Float; fname = "tofloat"; formals = [(Int, "args")]; fstmts = []};
+      {rtyp = String; fname = "itostr";  formals = [(Int, "args")]; fstmts = []};
+      {rtyp = String; fname = "ftostr";  formals = [(Float, "args")]; fstmts = []};*)
   ]
   in
 
@@ -92,6 +96,12 @@ let check(structs, functions) =
         let lt, vname, map1 = find_name v map "assignment err" in
         let rt, ex, map2 = check_expr map1 e in
         (check_assign lt rt "data type missmatch", SAssign((lt, vname), (rt, ex)), map2)
+
+      | OpAssign(v, op, e) ->
+        let lt, vname, map1 = find_name v map "assignment err" in
+        let rt, ex, map2 = check_expr map1 e in
+        (check_assign lt rt "data type missmatch", SOpAssign((lt, vname), (rt, ex)), map2)
+
       | ArrayAssign(v, i, e) ->
         let strName = match v with
           Id i -> i
@@ -150,6 +160,13 @@ let check(structs, functions) =
         in
         let lt, vname, map1 = find_name v map "assignment err" in
       (Int, SStructUse((lt, vname), m), map1)
+      (*| Unop(uop, e) as ex ->
+          let (t, e') = check_expr map e in
+          let ty = match uop with
+            Incr | Decr when t = Int || t = Float -> t
+            | _ -> raise(Failure("illegal unary op " ^ string_of_uop uop ^ string_of_typ t ^ " in " ^ string_of_expr ex)) 
+          in 
+          (ty, SUnop(uop, (t, e')), map')*)
       | Binop(e1, op, e2) as ex ->
         let (t1, e1', map') = check_expr map e1 in
         let (t2, e2', map'') = check_expr map' e2 in
@@ -238,6 +255,7 @@ let check(structs, functions) =
                     else raise(Failure("return type expected to be " ^ string_of_typ func.rtyp ^ "but " ^ string_of_typ t ^ " was given; error in " ^ string_of_expr e))
       | _ -> raise(Failure("Statement match failed"))
     in
+    
     let symbols = List.fold_left (fun m (ty, name) -> StringMap.add name (ty, name, 0) m) StringMap.empty func.formals
     in
       {

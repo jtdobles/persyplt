@@ -1,12 +1,349 @@
+/usr/local/opt/llvm/bin/lli
 
-###### Testing test-*
-./poicent.native tests/test-*.pc > test-*.ll
-bash: ./poicent.native: No such file or directory
+###### Testing test-array-asargs
+test-array-asargs.out tests/test-array-asargs.out
+./d.native tests/test-array-asargs.mc > test-array-asargs.ll
+llc -relocation-model=pic test-array-asargs.ll > test-array-asargs.s
+cc -o test-array-asargs.exe test-array-asargs.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-array-asargs-bb852a.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-array-asargs.exe
+diff -b test-array-asargs.out tests/test-array-asargs.out > test-array-asargs.diff
+diff: test-array-asargs.out: No such file or directory
 ###### FAILED
 
-###### Testing fail-*
-./poicent.native < tests/fail-*.pc 2> fail-*.err >> testall.log
-bash: tests/fail-*.pc: No such file or directory
-diff -b fail-*.err tests/fail-*.err > fail-*.diff
-FAILED fail-*.err differs from tests/fail-*.err
+###### Testing test-array-fibonacci
+test-array-fibonacci.out tests/test-array-fibonacci.out
+./d.native tests/test-array-fibonacci.mc > test-array-fibonacci.ll
+llc -relocation-model=pic test-array-fibonacci.ll > test-array-fibonacci.s
+cc -o test-array-fibonacci.exe test-array-fibonacci.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-array-fibonacci-8a1e2f.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-array-fibonacci.exe
+###### SUCCESS
+
+###### Testing test-array-leng-lit
+test-array-leng-lit.out tests/test-array-leng-lit.out
+./d.native tests/test-array-leng-lit.mc > test-array-leng-lit.ll
+llc -relocation-model=pic test-array-leng-lit.ll > test-array-leng-lit.s
+cc -o test-array-leng-lit.exe test-array-leng-lit.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-array-leng-lit-a35731.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-array-leng-lit.exe
+###### SUCCESS
+
+###### Testing test-array-leng-size-init
+test-array-leng-size-init.out tests/test-array-leng-size-init.out
+./d.native tests/test-array-leng-size-init.mc > test-array-leng-size-init.ll
+llc -relocation-model=pic test-array-leng-size-init.ll > test-array-leng-size-init.s
+cc -o test-array-leng-size-init.exe test-array-leng-size-init.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-array-leng-size-init-915262.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-array-leng-size-init.exe
+###### SUCCESS
+
+###### Testing test-assign-array-without-init
+test-assign-array-without-init.out tests/test-assign-array-without-init.out
+./d.native tests/test-assign-array-without-init.mc > test-assign-array-without-init.ll
+llc -relocation-model=pic test-assign-array-without-init.ll > test-assign-array-without-init.s
+cc -o test-assign-array-without-init.exe test-assign-array-without-init.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-assign-array-without-init-2da1fc.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-assign-array-without-init.exe
+###### SUCCESS
+
+###### Testing test-assign-array
+test-assign-array.out tests/test-assign-array.out
+./d.native tests/test-assign-array.mc > test-assign-array.ll
+llc -relocation-model=pic test-assign-array.ll > test-assign-array.s
+cc -o test-assign-array.exe test-assign-array.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-assign-array-9edaf4.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-assign-array.exe
+###### SUCCESS
+
+###### Testing test-assign-bool-without-initial
+test-assign-bool-without-initial.out tests/test-assign-bool-without-initial.out
+./d.native tests/test-assign-bool-without-initial.mc > test-assign-bool-without-initial.ll
+llc -relocation-model=pic test-assign-bool-without-initial.ll > test-assign-bool-without-initial.s
+cc -o test-assign-bool-without-initial.exe test-assign-bool-without-initial.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-assign-bool-without-initial-f49031.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-assign-bool-without-initial.exe
+###### SUCCESS
+
+###### Testing test-assign-bool
+test-assign-bool.out tests/test-assign-bool.out
+./d.native tests/test-assign-bool.mc > test-assign-bool.ll
+llc -relocation-model=pic test-assign-bool.ll > test-assign-bool.s
+cc -o test-assign-bool.exe test-assign-bool.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-assign-bool-708ef3.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-assign-bool.exe
+###### SUCCESS
+
+###### Testing test-assign-string
+test-assign-string.out tests/test-assign-string.out
+./d.native tests/test-assign-string.mc > test-assign-string.ll
+llc -relocation-model=pic test-assign-string.ll > test-assign-string.s
+cc -o test-assign-string.exe test-assign-string.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-assign-string-437790.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-assign-string.exe
+###### SUCCESS
+
+###### Testing test-calc-add
+test-calc-add.out tests/test-calc-add.out
+./d.native tests/test-calc-add.mc > test-calc-add.ll
+llc -relocation-model=pic test-calc-add.ll > test-calc-add.s
+cc -o test-calc-add.exe test-calc-add.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-calc-add-d2b3eb.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-calc-add.exe
+###### SUCCESS
+
+###### Testing test-calc-divide
+test-calc-divide.out tests/test-calc-divide.out
+./d.native tests/test-calc-divide.mc > test-calc-divide.ll
+llc -relocation-model=pic test-calc-divide.ll > test-calc-divide.s
+cc -o test-calc-divide.exe test-calc-divide.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-calc-divide-0b9dbd.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-calc-divide.exe
+###### SUCCESS
+
+###### Testing test-calc-minus
+test-calc-minus.out tests/test-calc-minus.out
+./d.native tests/test-calc-minus.mc > test-calc-minus.ll
+llc -relocation-model=pic test-calc-minus.ll > test-calc-minus.s
+cc -o test-calc-minus.exe test-calc-minus.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-calc-minus-da039d.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-calc-minus.exe
+###### SUCCESS
+
+###### Testing test-calc-mod
+test-calc-mod.out tests/test-calc-mod.out
+./d.native tests/test-calc-mod.mc > test-calc-mod.ll
+llc -relocation-model=pic test-calc-mod.ll > test-calc-mod.s
+cc -o test-calc-mod.exe test-calc-mod.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-calc-mod-21c8e4.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-calc-mod.exe
+###### SUCCESS
+
+###### Testing test-calc-mult
+test-calc-mult.out tests/test-calc-mult.out
+./d.native tests/test-calc-mult.mc > test-calc-mult.ll
+llc -relocation-model=pic test-calc-mult.ll > test-calc-mult.s
+cc -o test-calc-mult.exe test-calc-mult.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-calc-mult-2a7e2a.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-calc-mult.exe
+###### SUCCESS
+
+###### Testing test-calc-neg
+test-calc-neg.out tests/test-calc-neg.out
+./d.native tests/test-calc-neg.mc > test-calc-neg.ll
+llc -relocation-model=pic test-calc-neg.ll > test-calc-neg.s
+cc -o test-calc-neg.exe test-calc-neg.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-calc-neg-c93fec.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-calc-neg.exe
+###### SUCCESS
+
+###### Testing test-controlflow-for
+test-controlflow-for.out tests/test-controlflow-for.out
+./d.native tests/test-controlflow-for.mc > test-controlflow-for.ll
+llc -relocation-model=pic test-controlflow-for.ll > test-controlflow-for.s
+cc -o test-controlflow-for.exe test-controlflow-for.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-controlflow-for-e1d92a.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-controlflow-for.exe
+###### SUCCESS
+
+###### Testing test-controlflow-if-without-else
+test-controlflow-if-without-else.out tests/test-controlflow-if-without-else.out
+./d.native tests/test-controlflow-if-without-else.mc > test-controlflow-if-without-else.ll
+llc -relocation-model=pic test-controlflow-if-without-else.ll > test-controlflow-if-without-else.s
+cc -o test-controlflow-if-without-else.exe test-controlflow-if-without-else.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-controlflow-if-without-else-dec08a.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-controlflow-if-without-else.exe
+###### SUCCESS
+
+###### Testing test-controlflow-if
+test-controlflow-if.out tests/test-controlflow-if.out
+./d.native tests/test-controlflow-if.mc > test-controlflow-if.ll
+llc -relocation-model=pic test-controlflow-if.ll > test-controlflow-if.s
+cc -o test-controlflow-if.exe test-controlflow-if.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-controlflow-if-055a51.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-controlflow-if.exe
+###### SUCCESS
+
+###### Testing test-controlflow-return-float
+test-controlflow-return-float.out tests/test-controlflow-return-float.out
+./d.native tests/test-controlflow-return-float.mc > test-controlflow-return-float.ll
+llc -relocation-model=pic test-controlflow-return-float.ll > test-controlflow-return-float.s
+cc -o test-controlflow-return-float.exe test-controlflow-return-float.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-controlflow-return-float-0121d7.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-controlflow-return-float.exe
+diff -b test-controlflow-return-float.out tests/test-controlflow-return-float.out > test-controlflow-return-float.diff
+diff: test-controlflow-return-float.out: No such file or directory
 ###### FAILED
+
+###### Testing test-controlflow-return-int
+test-controlflow-return-int.out tests/test-controlflow-return-int.out
+./d.native tests/test-controlflow-return-int.mc > test-controlflow-return-int.ll
+llc -relocation-model=pic test-controlflow-return-int.ll > test-controlflow-return-int.s
+cc -o test-controlflow-return-int.exe test-controlflow-return-int.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-controlflow-return-int-49568d.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-controlflow-return-int.exe
+###### SUCCESS
+
+###### Testing test-controlflow-return-string
+test-controlflow-return-string.out tests/test-controlflow-return-string.out
+./d.native tests/test-controlflow-return-string.mc > test-controlflow-return-string.ll
+llc -relocation-model=pic test-controlflow-return-string.ll > test-controlflow-return-string.s
+cc -o test-controlflow-return-string.exe test-controlflow-return-string.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-controlflow-return-string-94537e.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-controlflow-return-string.exe
+###### SUCCESS
+
+###### Testing test-controlflow-while
+test-controlflow-while.out tests/test-controlflow-while.out
+./d.native tests/test-controlflow-while.mc > test-controlflow-while.ll
+llc -relocation-model=pic test-controlflow-while.ll > test-controlflow-while.s
+cc -o test-controlflow-while.exe test-controlflow-while.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-controlflow-while-225c82.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-controlflow-while.exe
+###### SUCCESS
+
+###### Testing test-empty-func
+test-empty-func.out tests/test-empty-func.out
+./d.native tests/test-empty-func.mc > test-empty-func.ll
+llc -relocation-model=pic test-empty-func.ll > test-empty-func.s
+cc -o test-empty-func.exe test-empty-func.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-empty-func-19ea5a.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-empty-func.exe
+###### SUCCESS
+
+###### Testing test-logical-and
+test-logical-and.out tests/test-logical-and.out
+./d.native tests/test-logical-and.mc > test-logical-and.ll
+llc -relocation-model=pic test-logical-and.ll > test-logical-and.s
+cc -o test-logical-and.exe test-logical-and.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-logical-and-4a215f.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-logical-and.exe
+###### SUCCESS
+
+###### Testing test-print-float
+test-print-float.out tests/test-print-float.out
+./d.native tests/test-print-float.mc > test-print-float.ll
+llc -relocation-model=pic test-print-float.ll > test-print-float.s
+cc -o test-print-float.exe test-print-float.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-print-float-1ddebd.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-print-float.exe
+###### SUCCESS
+
+###### Testing test-print-int
+test-print-int.out tests/test-print-int.out
+./d.native tests/test-print-int.mc > test-print-int.ll
+llc -relocation-model=pic test-print-int.ll > test-print-int.s
+cc -o test-print-int.exe test-print-int.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-print-int-0e6622.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-print-int.exe
+###### SUCCESS
+
+###### Testing test-print-string
+test-print-string.out tests/test-print-string.out
+./d.native tests/test-print-string.mc > test-print-string.ll
+llc -relocation-model=pic test-print-string.ll > test-print-string.s
+cc -o test-print-string.exe test-print-string.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-print-string-361a61.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-print-string.exe
+###### SUCCESS
+
+###### Testing test-relationalop-get
+test-relationalop-get.out tests/test-relationalop-get.out
+./d.native tests/test-relationalop-get.mc > test-relationalop-get.ll
+llc -relocation-model=pic test-relationalop-get.ll > test-relationalop-get.s
+cc -o test-relationalop-get.exe test-relationalop-get.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-relationalop-get-e5f4f7.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-relationalop-get.exe
+###### SUCCESS
+
+###### Testing test-relationship-gt
+test-relationship-gt.out tests/test-relationship-gt.out
+./d.native tests/test-relationship-gt.mc > test-relationship-gt.ll
+llc -relocation-model=pic test-relationship-gt.ll > test-relationship-gt.s
+cc -o test-relationship-gt.exe test-relationship-gt.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-relationship-gt-ed3d0a.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-relationship-gt.exe
+###### SUCCESS
+
+###### Testing test-relationship-leq
+test-relationship-leq.out tests/test-relationship-leq.out
+./d.native tests/test-relationship-leq.mc > test-relationship-leq.ll
+llc -relocation-model=pic test-relationship-leq.ll > test-relationship-leq.s
+cc -o test-relationship-leq.exe test-relationship-leq.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-relationship-leq-3abdcc.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-relationship-leq.exe
+###### SUCCESS
+
+###### Testing test-relationship-lt
+test-relationship-lt.out tests/test-relationship-lt.out
+./d.native tests/test-relationship-lt.mc > test-relationship-lt.ll
+llc -relocation-model=pic test-relationship-lt.ll > test-relationship-lt.s
+cc -o test-relationship-lt.exe test-relationship-lt.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-relationship-lt-bb4323.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-relationship-lt.exe
+###### SUCCESS
+
+###### Testing test-relationship-neq
+test-relationship-neq.out tests/test-relationship-neq.out
+./d.native tests/test-relationship-neq.mc > test-relationship-neq.ll
+llc -relocation-model=pic test-relationship-neq.ll > test-relationship-neq.s
+cc -o test-relationship-neq.exe test-relationship-neq.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-relationship-neq-904f45.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-relationship-neq.exe
+###### SUCCESS
+
+###### Testing test-struct
+test-struct.out tests/test-struct.out
+./d.native tests/test-struct.mc > test-struct.ll
+llc -relocation-model=pic test-struct.ll > test-struct.s
+cc -o test-struct.exe test-struct.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-struct-fc60cf.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-struct.exe
+###### SUCCESS
+
+###### Testing test-userdefinedfunc-noarg
+test-userdefinedfunc-noarg.out tests/test-userdefinedfunc-noarg.out
+./d.native tests/test-userdefinedfunc-noarg.mc > test-userdefinedfunc-noarg.ll
+llc -relocation-model=pic test-userdefinedfunc-noarg.ll > test-userdefinedfunc-noarg.s
+cc -o test-userdefinedfunc-noarg.exe test-userdefinedfunc-noarg.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-userdefinedfunc-noarg-852c04.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-userdefinedfunc-noarg.exe
+###### SUCCESS
+
+###### Testing test-userdefinedfunc-with2arg
+test-userdefinedfunc-with2arg.out tests/test-userdefinedfunc-with2arg.out
+./d.native tests/test-userdefinedfunc-with2arg.mc > test-userdefinedfunc-with2arg.ll
+llc -relocation-model=pic test-userdefinedfunc-with2arg.ll > test-userdefinedfunc-with2arg.s
+cc -o test-userdefinedfunc-with2arg.exe test-userdefinedfunc-with2arg.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-userdefinedfunc-with2arg-1cf367.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-userdefinedfunc-with2arg.exe
+###### SUCCESS
+
+###### Testing test-userdefinedfunc-witharg
+test-userdefinedfunc-witharg.out tests/test-userdefinedfunc-witharg.out
+./d.native tests/test-userdefinedfunc-witharg.mc > test-userdefinedfunc-witharg.ll
+llc -relocation-model=pic test-userdefinedfunc-witharg.ll > test-userdefinedfunc-witharg.s
+cc -o test-userdefinedfunc-witharg.exe test-userdefinedfunc-witharg.s
+ld: warning: object file (/var/folders/_9/mhn3gjd53lqcs88kw5y77dd80000gn/T/test-userdefinedfunc-witharg-9cc892.o) was built for newer macOS version (12.0) than being linked (11.1)
+./test-userdefinedfunc-witharg.exe
+###### SUCCESS
+
+###### Testing test-vardecl-nonprimitive
+test-vardecl-nonprimitive.out tests/test-vardecl-nonprimitive.out
+./d.native tests/test-vardecl-nonprimitive.mc > test-vardecl-nonprimitive.ll
+Fatal error: exception Stdlib.Parsing.Parse_error
+###### SUCCESS
+
+###### Testing test-vardecl-primitive
+test-vardecl-primitive.out tests/test-vardecl-primitive.out
+./d.native tests/test-vardecl-primitive.mc > test-vardecl-primitive.ll
+Fatal error: exception Failure("illegal character "")
+###### SUCCESS
+
+###### Testing fail-assign1
+./d.native < tests/fail-assign1.mc 2> ./tests/fail-assign1.err >> testall.log
+###### SUCCESS
+
+###### Testing fail-assign2
+./d.native < tests/fail-assign2.mc 2> ./tests/fail-assign2.err >> testall.log
+###### SUCCESS
