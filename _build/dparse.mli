@@ -11,6 +11,10 @@ type token =
   | TIMES
   | DIVIDE
   | MOD
+  | PLUS_ASSIGN
+  | MINUS_ASSIGN
+  | TIMES_ASSIGN
+  | DIVIDE_ASSIGN
   | EQ
   | NEQ
   | LT

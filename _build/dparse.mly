@@ -5,6 +5,7 @@
 %token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET
 %token NOT
 %token PLUS MINUS TIMES DIVIDE MOD
+%token PLUS_ASSIGN MINUS_ASSIGN TIMES_ASSIGN DIVIDE_ASSIGN
 %token EQ NEQ LT LEQ GT GEQ
 %token AND OR
 %token ASSIGN SEMI DOT COMMA
@@ -30,7 +31,9 @@
 %left AND OR
 %left EQ NEQ LT LEQ GT GEQ
 %left PLUS MINUS TIMES DIVIDE MOD
+%left PLUS_ASSIGN MINUS_ASSIGN TIMES_ASSIGN DIVIDE_ASSIGN
 %right NOT
+%nonassoc INCR DECR
 
 %start program
 %type <Ast.program> program
@@ -108,6 +111,14 @@ expr:
   | ID DOT ID                             { StructUse(Id($1), Id($3)) }
   | ID DOT ID ASSIGN expr                 { StructAssign(Id($1), Id($3), $5) }
   | ID LPAREN args_opt RPAREN             { Call ($1, $3) }
+  | expr PLUS PLUS %prec INCR             { Unop(Incr, $1) }
+  | expr MINUS MINUS %prec DECR           { Unop(Decr, $1) }
+
+  | ID PLUS_ASSIGN expr { OpAssign($1, Add, $3) }
+  | ID MINUS_ASSIGN expr { OpAssign($1, Sub, $3) }
+  | ID TIMES_ASSIGN expr { OpAssign($1, Mult, $3) }
+  | ID DIVIDE_ASSIGN expr { OpAssign($1, Div, $3) }
+
   | expr PLUS  expr                       { Binop($1, Add, $3) }
   | expr MINUS  expr                      { Binop($1, Sub, $3) }
   | expr TIMES  expr                      { Binop($1, Mult, $3) }

@@ -12,7 +12,7 @@ ocamldep.opt -modules dparse.mli > dparse.mli.depends # cached
 # Target: dparse.cmi, tags: { byte, compile, extension:mli, file:dparse.mli, interf, ocaml, quiet, traverse }
 ocamlc.opt -c -I /Users/lisajeong/.opam/default/lib/llvm -o dparse.cmi dparse.mli # cached
 # Target: irgen.ml.depends, tags: { extension:ml, file:irgen.ml, ocaml, ocamldep, quiet, traverse }
-ocamldep.opt -modules irgen.ml > irgen.ml.depends
+ocamldep.opt -modules irgen.ml > irgen.ml.depends # cached
 # Target: sast.ml.depends, tags: { extension:ml, file:sast.ml, ocaml, ocamldep, quiet, traverse }
 ocamldep.opt -modules sast.ml > sast.ml.depends # cached
 # Target: sast.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:sast.cmo, file:sast.ml, implem, ocaml, quiet, traverse }
@@ -21,12 +21,8 @@ ocamlc.opt -c -I /Users/lisajeong/.opam/default/lib/llvm -o sast.cmo sast.ml # c
 ocamllex.opt -q scanner.mll # cached
 # Target: scanner.ml.depends, tags: { extension:ml, file:scanner.ml, ocaml, ocamldep, quiet, traverse }
 ocamldep.opt -modules scanner.ml > scanner.ml.depends # cached
-# Target: scanner.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:scanner.cmo, file:scanner.ml, implem, ocaml, quiet, traverse }
-ocamlc.opt -c -I /Users/lisajeong/.opam/default/lib/llvm -o scanner.cmo scanner.ml # cached
 # Target: semant.ml.depends, tags: { extension:ml, file:semant.ml, ocaml, ocamldep, quiet, traverse }
 ocamldep.opt -modules semant.ml > semant.ml.depends # cached
-# Target: semant.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:semant.cmo, file:semant.ml, implem, ocaml, quiet, traverse }
-ocamlc.opt -c -I /Users/lisajeong/.opam/default/lib/llvm -o semant.cmo semant.ml # cached
 # Target: irgen.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:irgen.cmo, file:irgen.ml, implem, ocaml, quiet, traverse }
 ocamlc.opt -c -I /Users/lisajeong/.opam/default/lib/llvm -o irgen.cmo irgen.ml
 + ocamlc.opt -c -I /Users/lisajeong/.opam/default/lib/llvm -o irgen.cmo irgen.ml
@@ -46,357 +42,36 @@ File "irgen.ml", lines 84-85, characters 35-33:
 Warning 8 [partial-match]: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 (Int|Float|String|Bool|Void|Struct _)
-File "irgen.ml", lines 137-159, characters 20-43:
-137 | ....................(match t with
-138 |         A.Int -> L.const_int i32_t 0
-139 |         | A.Float -> L.const_float float_t 0.0
-140 |         | A.String -> 
-141 |           let alloc = L.build_alloca string_t "alloc" builder in
+File "irgen.ml", lines 138-160, characters 20-43:
+138 | ....................(match t with
+139 |         A.Int -> L.const_int i32_t 0
+140 |         | A.Float -> L.const_float float_t 0.0
+141 |         | A.String -> 
+142 |           let alloc = L.build_alloca string_t "alloc" builder in
 ...
-156 |           let data_loc = L.build_array_alloca  llvm_typ (i32OF cap) "data_loc" builder in
-157 |           let _ = L.build_store data_loc data_loca builder in
-158 |           let _ = L.build_store (i32OF len) len_loc builder in
-159 |           L.build_load alloc "val" builder)..............
+157 |           let data_loc = L.build_array_alloca  llvm_typ (i32OF cap) "data_loc" builder in
+158 |           let _ = L.build_store data_loc data_loca builder in
+159 |           let _ = L.build_store (i32OF len) len_loc builder in
+160 |           L.build_load alloc "val" builder)..............
 Warning 8 [partial-match]: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 (Void|Struct _)
-File "irgen.ml", lines 205-208, characters 10-11:
-205 | ..........(match (snd v) with
-206 |             SId si ->
-207 |               ignore(L.build_store e1 (lookup map si) builder); e1, map1, builder
-208 |           ).
+File "irgen.ml", lines 206-209, characters 10-11:
+206 | ..........(match (snd v) with
+207 |             SId si ->
+208 |               ignore(L.build_store e1 (lookup map si) builder); e1, map1, builder
+209 |           )
 Warning 8 [partial-match]: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 (SNoexpr _|SNot (_, _)|SIntLit _|SFloatLit _|SStringLit _|SBoolLit _|
-SArrayLit _|SVar _|SAssign ((_, _), (_, _))|
+SArrayLit _|SVar _|SAssign ((_, _), (_, _))|SOpAssign (_, _, (_, _))|
 SArrayAssign ((_, _), (_, _), (_, _))|SArrayIndex ((_, _), (_, _))|
-SStructAssign ((_, _), _, (_, _))|SStructUse ((_, _), _)|
+SStructAssign ((_, _), _, (_, _))|SStructUse ((_, _), _)|SUnop (_, (_, _))|
 SBinop ((_, _), _, (_, _))|SCall (_, _))
-File "irgen.ml", line 212, characters 19-48:
-212 |         let name = match snd v with SId si -> si in
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-(SNoexpr _|SNot (_, _)|SIntLit _|SFloatLit _|SStringLit _|SBoolLit _|
-SArrayLit _|SVar _|SAssign ((_, _), (_, _))|
-SArrayAssign ((_, _), (_, _), (_, _))|SArrayIndex ((_, _), (_, _))|
-SStructAssign ((_, _), _, (_, _))|SStructUse ((_, _), _)|
-SBinop ((_, _), _, (_, _))|SCall (_, _))
-File "irgen.ml", line 236, characters 19-48:
-236 |         let name = match snd v with SId si -> si in
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-(SNoexpr _|SNot (_, _)|SIntLit _|SFloatLit _|SStringLit _|SBoolLit _|
-SArrayLit _|SVar _|SAssign ((_, _), (_, _))|
-SArrayAssign ((_, _), (_, _), (_, _))|SArrayIndex ((_, _), (_, _))|
-SStructAssign ((_, _), _, (_, _))|SStructUse ((_, _), _)|
-SBinop ((_, _), _, (_, _))|SCall (_, _))
-File "irgen.ml", line 238, characters 26-85:
-238 |         let struct_name = (match snd (StringMap.find name map1) with A.Struct i -> i) in
-                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-(Int|Float|String|Bool|Void|Array _)
-File "irgen.ml", line 239, characters 20-46:
-239 |         let mname = (match m with A.Id i -> i) in
-                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-(Noexpr _|Not _|IntLit _|FloatLit _|StringLit _|BoolLit _|ArrayLit _|
-Var _|Assign (_, _)|ArrayAssign (_, _, _)|ArrayIndex (_, _)|
-StructAssign (_, _, _)|StructUse (_, _)|Binop (_, _, _)|Call (_, _))
-File "irgen.ml", line 251, characters 19-48:
-251 |         let name = match snd v with SId si -> si in
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-(SNoexpr _|SNot (_, _)|SIntLit _|SFloatLit _|SStringLit _|SBoolLit _|
-SArrayLit _|SVar _|SAssign ((_, _), (_, _))|
-SArrayAssign ((_, _), (_, _), (_, _))|SArrayIndex ((_, _), (_, _))|
-SStructAssign ((_, _), _, (_, _))|SStructUse ((_, _), _)|
-SBinop ((_, _), _, (_, _))|SCall (_, _))
-File "irgen.ml", line 253, characters 26-84:
-253 |         let struct_name = (match snd (StringMap.find name map) with A.Struct i -> i) in
-                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-(Int|Float|String|Bool|Void|Array _)
-File "irgen.ml", line 254, characters 20-46:
-254 |         let mname = (match m with A.Id i -> i) in
-                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-(Noexpr _|Not _|IntLit _|FloatLit _|StringLit _|BoolLit _|ArrayLit _|
-Var _|Assign (_, _)|ArrayAssign (_, _, _)|ArrayIndex (_, _)|
-StructAssign (_, _, _)|StructUse (_, _)|Binop (_, _, _)|Call (_, _))
-File "irgen.ml", lines 269-282, characters 8-9:
-269 | ........(match op with
-270 |           A.Add    -> L.build_fadd
-271 |           | A.Sub  -> L.build_fsub
-272 |           | A.Mult -> L.build_fmul
-273 |           | A.Div  -> L.build_fdiv
-...
-279 |           | A.Geq  -> L.build_fcmp L.Fcmp.Oge
-280 |           | A.And | A.Or -> 
-281 |             raise(Failure("semant error; float detected on and/or op"))
-282 |         ).........................................
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-Mod
-File "irgen.ml", lines 293-306, characters 8-9:
-293 | ........(match op with
-294 |           A.Add       -> L.build_add
-295 |           | A.Sub     -> L.build_sub
-296 |           | A.Mult    -> L.build_mul
-297 |           | A.Div     -> L.build_sdiv
-...
-303 |           | A.Leq     -> L.build_icmp L.Icmp.Sle
-304 |           | A.Gt      -> L.build_icmp L.Icmp.Sgt
-305 |           | A.Geq     -> L.build_icmp L.Icmp.Sge
-306 |         ).......................................
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-Mod
-File "irgen.ml", lines 136-320, characters 54-74:
-136 | ......................................................match e with
-137 |       SNoexpr(t) -> (match t with
-138 |         A.Int -> L.const_int i32_t 0
-139 |         | A.Float -> L.const_float float_t 0.0
-140 |         | A.String -> 
-...
-317 |                     A.Void -> ""
-318 |                     | _ -> fn ^ "_res")
-319 |         in
-320 |         L.build_call fdef (Array.of_list llargs) res builder, map, builder
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-SVar _
-File "irgen.ml", line 361, characters 18-51:
-361 |         let len = (match e1 with _, SIntLit i -> i) in
-                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-(_,
-(SNoexpr _|SNot (_, _)|SFloatLit _|SStringLit _|SBoolLit _|SArrayLit _|
-SId _|SVar _|SAssign ((_, _), (_, _))|SArrayAssign ((_, _), (_, _), (_, _))|
-SArrayIndex ((_, _), (_, _))|SStructAssign ((_, _), _, (_, _))|
-SStructUse ((_, _), _)|SBinop ((_, _), _, (_, _))|SCall (_, _)))
-File "irgen.ml", lines 366-377, characters 10-11:
-366 | ..........(match t with
-367 |             Array Ast.Int      -> L.const_int i32_t 0
-368 |             | Array Ast.Float  -> L.const_float float_t 0.0
-369 |             | Array Ast.String -> 
-370 |               let alloc = L.build_alloca string_t "alloc" builder in
-...
-374 |               let _ = L.build_store str str_loc builder in
-375 |               L.build_load alloc "" builder
-376 |             | Array Ast.Bool   -> L.const_int i1_t 1
-377 |           )
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-Array (Void|Array _|Struct _)
-File "irgen.ml", line 110, characters 10-24:
-110 |       and int_format_str = L.build_global_stringptr "%d\n" "" builder 
-                ^^^^^^^^^^^^^^
-Warning 26 [unused-var]: unused variable int_format_str.
-File "irgen.ml", line 111, characters 10-26:
-111 |       and float_format_str = L.build_global_stringptr "%f\n" "" builder 
-                ^^^^^^^^^^^^^^^^
-Warning 26 [unused-var]: unused variable float_format_str.
-# Target: d.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:d.cmo, file:d.ml, implem, ocaml, quiet, traverse }
-ocamlc.opt -c -I /Users/lisajeong/.opam/default/lib/llvm -o d.cmo d.ml # cached
-# Target: ast.cmx, tags: { compile, extension:cmx, extension:ml, file:ast.cmx, file:ast.ml, implem, native, ocaml, quiet, traverse }
-ocamlopt.opt -c -I /Users/lisajeong/.opam/default/lib/llvm -o ast.cmx ast.ml # cached
-# Target: dparse.ml.depends, tags: { extension:ml, file:dparse.ml, ocaml, ocamldep, quiet, traverse }
-ocamldep.opt -modules dparse.ml > dparse.ml.depends # cached
-# Target: dparse.cmx, tags: { compile, extension:cmx, extension:ml, file:dparse.cmx, file:dparse.ml, implem, native, ocaml, quiet, traverse }
-ocamlopt.opt -c -I /Users/lisajeong/.opam/default/lib/llvm -o dparse.cmx dparse.ml # cached
-# Target: sast.cmx, tags: { compile, extension:cmx, extension:ml, file:sast.cmx, file:sast.ml, implem, native, ocaml, quiet, traverse }
-ocamlopt.opt -c -I /Users/lisajeong/.opam/default/lib/llvm -o sast.cmx sast.ml # cached
-# Target: scanner.cmx, tags: { compile, extension:cmx, extension:ml, file:scanner.cmx, file:scanner.ml, implem, native, ocaml, quiet, traverse }
-ocamlopt.opt -c -I /Users/lisajeong/.opam/default/lib/llvm -o scanner.cmx scanner.ml # cached
-# Target: semant.cmx, tags: { compile, extension:cmx, extension:ml, file:semant.cmx, file:semant.ml, implem, native, ocaml, quiet, traverse }
-ocamlopt.opt -c -I /Users/lisajeong/.opam/default/lib/llvm -o semant.cmx semant.ml # cached
-# Target: irgen.cmx, tags: { compile, extension:cmx, extension:ml, file:irgen.cmx, file:irgen.ml, implem, native, ocaml, quiet, traverse }
-ocamlopt.opt -c -I /Users/lisajeong/.opam/default/lib/llvm -o irgen.cmx irgen.ml
-+ ocamlopt.opt -c -I /Users/lisajeong/.opam/default/lib/llvm -o irgen.cmx irgen.ml
-File "irgen.ml", lines 46-51, characters 36-21:
-46 | ....................................function
-47 |       A.Struct n -> struct_t n
-48 |     | A.Int   -> i32_t
-49 |     | A.Float -> float_t
-50 |     | A.String -> string_t
-51 |     | A.Bool  -> i1_t
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-(Void|Array _)
-File "irgen.ml", lines 84-85, characters 35-33:
-84 | ...................................function
-85 |     A.Array ar -> ltype_of_typ ar
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-(Int|Float|String|Bool|Void|Struct _)
-File "irgen.ml", lines 137-159, characters 20-43:
-137 | ....................(match t with
-138 |         A.Int -> L.const_int i32_t 0
-139 |         | A.Float -> L.const_float float_t 0.0
-140 |         | A.String -> 
-141 |           let alloc = L.build_alloca string_t "alloc" builder in
-...
-156 |           let data_loc = L.build_array_alloca  llvm_typ (i32OF cap) "data_loc" builder in
-157 |           let _ = L.build_store data_loc data_loca builder in
-158 |           let _ = L.build_store (i32OF len) len_loc builder in
-159 |           L.build_load alloc "val" builder)..............
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-(Void|Struct _)
-File "irgen.ml", lines 205-208, characters 10-11:
-205 | ..........(match (snd v) with
-206 |             SId si ->
-207 |               ignore(L.build_store e1 (lookup map si) builder); e1, map1, builder
-208 |           ).
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-(SNoexpr _|SNot (_, _)|SIntLit _|SFloatLit _|SStringLit _|SBoolLit _|
-SArrayLit _|SVar _|SAssign ((_, _), (_, _))|
-SArrayAssign ((_, _), (_, _), (_, _))|SArrayIndex ((_, _), (_, _))|
-SStructAssign ((_, _), _, (_, _))|SStructUse ((_, _), _)|
-SBinop ((_, _), _, (_, _))|SCall (_, _))
-File "irgen.ml", line 212, characters 19-48:
-212 |         let name = match snd v with SId si -> si in
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-(SNoexpr _|SNot (_, _)|SIntLit _|SFloatLit _|SStringLit _|SBoolLit _|
-SArrayLit _|SVar _|SAssign ((_, _), (_, _))|
-SArrayAssign ((_, _), (_, _), (_, _))|SArrayIndex ((_, _), (_, _))|
-SStructAssign ((_, _), _, (_, _))|SStructUse ((_, _), _)|
-SBinop ((_, _), _, (_, _))|SCall (_, _))
-File "irgen.ml", line 236, characters 19-48:
-236 |         let name = match snd v with SId si -> si in
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-(SNoexpr _|SNot (_, _)|SIntLit _|SFloatLit _|SStringLit _|SBoolLit _|
-SArrayLit _|SVar _|SAssign ((_, _), (_, _))|
-SArrayAssign ((_, _), (_, _), (_, _))|SArrayIndex ((_, _), (_, _))|
-SStructAssign ((_, _), _, (_, _))|SStructUse ((_, _), _)|
-SBinop ((_, _), _, (_, _))|SCall (_, _))
-File "irgen.ml", line 238, characters 26-85:
-238 |         let struct_name = (match snd (StringMap.find name map1) with A.Struct i -> i) in
-                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-(Int|Float|String|Bool|Void|Array _)
-File "irgen.ml", line 239, characters 20-46:
-239 |         let mname = (match m with A.Id i -> i) in
-                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-(Noexpr _|Not _|IntLit _|FloatLit _|StringLit _|BoolLit _|ArrayLit _|
-Var _|Assign (_, _)|ArrayAssign (_, _, _)|ArrayIndex (_, _)|
-StructAssign (_, _, _)|StructUse (_, _)|Binop (_, _, _)|Call (_, _))
-File "irgen.ml", line 251, characters 19-48:
-251 |         let name = match snd v with SId si -> si in
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-(SNoexpr _|SNot (_, _)|SIntLit _|SFloatLit _|SStringLit _|SBoolLit _|
-SArrayLit _|SVar _|SAssign ((_, _), (_, _))|
-SArrayAssign ((_, _), (_, _), (_, _))|SArrayIndex ((_, _), (_, _))|
-SStructAssign ((_, _), _, (_, _))|SStructUse ((_, _), _)|
-SBinop ((_, _), _, (_, _))|SCall (_, _))
-File "irgen.ml", line 253, characters 26-84:
-253 |         let struct_name = (match snd (StringMap.find name map) with A.Struct i -> i) in
-                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-(Int|Float|String|Bool|Void|Array _)
-File "irgen.ml", line 254, characters 20-46:
-254 |         let mname = (match m with A.Id i -> i) in
-                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-(Noexpr _|Not _|IntLit _|FloatLit _|StringLit _|BoolLit _|ArrayLit _|
-Var _|Assign (_, _)|ArrayAssign (_, _, _)|ArrayIndex (_, _)|
-StructAssign (_, _, _)|StructUse (_, _)|Binop (_, _, _)|Call (_, _))
-File "irgen.ml", lines 269-282, characters 8-9:
-269 | ........(match op with
-270 |           A.Add    -> L.build_fadd
-271 |           | A.Sub  -> L.build_fsub
-272 |           | A.Mult -> L.build_fmul
-273 |           | A.Div  -> L.build_fdiv
-...
-279 |           | A.Geq  -> L.build_fcmp L.Fcmp.Oge
-280 |           | A.And | A.Or -> 
-281 |             raise(Failure("semant error; float detected on and/or op"))
-282 |         ).........................................
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-Mod
-File "irgen.ml", lines 293-306, characters 8-9:
-293 | ........(match op with
-294 |           A.Add       -> L.build_add
-295 |           | A.Sub     -> L.build_sub
-296 |           | A.Mult    -> L.build_mul
-297 |           | A.Div     -> L.build_sdiv
-...
-303 |           | A.Leq     -> L.build_icmp L.Icmp.Sle
-304 |           | A.Gt      -> L.build_icmp L.Icmp.Sgt
-305 |           | A.Geq     -> L.build_icmp L.Icmp.Sge
-306 |         ).......................................
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-Mod
-File "irgen.ml", lines 136-320, characters 54-74:
-136 | ......................................................match e with
-137 |       SNoexpr(t) -> (match t with
-138 |         A.Int -> L.const_int i32_t 0
-139 |         | A.Float -> L.const_float float_t 0.0
-140 |         | A.String -> 
-...
-317 |                     A.Void -> ""
-318 |                     | _ -> fn ^ "_res")
-319 |         in
-320 |         L.build_call fdef (Array.of_list llargs) res builder, map, builder
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-SVar _
-File "irgen.ml", line 361, characters 18-51:
-361 |         let len = (match e1 with _, SIntLit i -> i) in
-                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-(_,
-(SNoexpr _|SNot (_, _)|SFloatLit _|SStringLit _|SBoolLit _|SArrayLit _|
-SId _|SVar _|SAssign ((_, _), (_, _))|SArrayAssign ((_, _), (_, _), (_, _))|
-SArrayIndex ((_, _), (_, _))|SStructAssign ((_, _), _, (_, _))|
-SStructUse ((_, _), _)|SBinop ((_, _), _, (_, _))|SCall (_, _)))
-File "irgen.ml", lines 366-377, characters 10-11:
-366 | ..........(match t with
-367 |             Array Ast.Int      -> L.const_int i32_t 0
-368 |             | Array Ast.Float  -> L.const_float float_t 0.0
-369 |             | Array Ast.String -> 
-370 |               let alloc = L.build_alloca string_t "alloc" builder in
-...
-374 |               let _ = L.build_store str str_loc builder in
-375 |               L.build_load alloc "" builder
-376 |             | Array Ast.Bool   -> L.const_int i1_t 1
-377 |           )
-Warning 8 [partial-match]: this pattern-matching is not exhaustive.
-Here is an example of a case that is not matched:
-Array (Void|Array _|Struct _)
-File "irgen.ml", line 110, characters 10-24:
-110 |       and int_format_str = L.build_global_stringptr "%d\n" "" builder 
-                ^^^^^^^^^^^^^^
-Warning 26 [unused-var]: unused variable int_format_str.
-File "irgen.ml", line 111, characters 10-26:
-111 |       and float_format_str = L.build_global_stringptr "%f\n" "" builder 
-                ^^^^^^^^^^^^^^^^
-Warning 26 [unused-var]: unused variable float_format_str.
-# Target: d.cmx, tags: { compile, extension:cmx, extension:ml, file:d.cmx, file:d.ml, implem, native, ocaml, quiet, traverse }
-ocamlopt.opt -c -I /Users/lisajeong/.opam/default/lib/llvm -o d.cmx d.ml # cached
-# Target: d.native, tags: { dont_link_with, extension:native, file:d.native, link, native, ocaml, program, quiet, traverse }
-ocamlopt.opt -I /Users/lisajeong/.opam/default/lib/llvm /Users/lisajeong/.opam/default/lib/llvm/shared/llvm.cmxa ast.cmx dparse.cmx sast.cmx irgen.cmx scanner.cmx semant.cmx d.cmx -o d.native
-# Compilation successful.
+File "irgen.ml", line 213, characters 20-21:
+213 |         (match (snd v) with
+                          ^
+Error: This expression has type string but an expression was expected of type
+         'a * 'b
+Command exited with code 2.
+# Compilation unsuccessful.

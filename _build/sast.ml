@@ -14,10 +14,12 @@ and sx =
   | SId of string
   | SVar of string
   | SAssign of sexpr * sexpr
+  | SOpAssign of string * op * sexpr
   | SArrayAssign of sexpr * sexpr * sexpr
   | SArrayIndex of sexpr * sexpr
   | SStructAssign of sexpr * expr * sexpr
   | SStructUse of sexpr * expr
+  | SUnop of uop * sexpr
   | SBinop of sexpr * op * sexpr
   | SCall of string * sexpr list
 
@@ -59,8 +61,10 @@ let rec string_of_sexpr (se:sexpr) = match snd se with
   | SArrayLit(l) -> "[" ^ (String.concat ", " (List.map string_of_sexpr l)) ^ "]"
   | SId(s) -> s
   | SAssign(v, e) -> string_of_sexpr v ^ " = " ^ string_of_sexpr e
+  | SOpAssign(v, o, e) -> v ^ " " ^ string_of_op o ^ "= " ^ string_of_sexpr e
   | SArrayAssign(v, i, e) -> string_of_sexpr v ^  "[" ^ string_of_sexpr i ^ "]"^" = " ^ string_of_sexpr e
   | SArrayIndex(v, i) -> string_of_sexpr v ^ "[" ^ string_of_sexpr i ^ "]"
+  (*| SUnop(o, e) -> string_of_uop o ^ string_of_sexpr e*)
   | SCall(f, el) -> f ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
   | _ -> "Sexpr not found"
 
@@ -74,7 +78,7 @@ let rec string_of_sstmt = function
     "for (" ^ string_of_sstmt e1  ^ " ; " ^ string_of_sexpr e2 ^ " ; " ^ string_of_sexpr e3  ^ ") " ^ string_of_sstmt s
   | SWhile(e, s) -> "while (" ^ string_of_sexpr e ^ ") " ^ string_of_sstmt s
   | SExpr(expr) -> string_of_sexpr expr ^ ";\n"
-  | SReturn(expr) -> "return " ^ string_of_sexpr expr ^ ";\n"
+  | SReturn(expr) -> "return " ^ string_of_sexpr expr
 
 let string_of_sstructs stdecl = 
   "struct " ^ stdecl.sstname ^ "{\n" ^

@@ -108,7 +108,8 @@ let translate (structs, functions) =
     let builder = L.builder_at_end context (L.entry_block the_function) in
     let char_format_str = L.build_global_stringptr "%s\n" "" builder
       and int_format_str = L.build_global_stringptr "%d\n" "" builder 
-      and float_format_str = L.build_global_stringptr "%f\n" "" builder 
+      and float_format_str = L.build_global_stringptr "%f\n" "" builder
+      and boolean_format_str = L.build_global_stringptr "%s\n" "" builder
     in
     (* Construct the function's "locals": formal arguments and locally
        declared variables.  Allocate each on the stack, initialize their
@@ -139,8 +140,8 @@ let translate (structs, functions) =
         | A.Float -> L.const_float float_t 0.0
         | A.String -> 
           let alloc = L.build_alloca string_t "alloc" builder in
-          let strGlobal = L.build_global_string "" "strGlobal" builder in
-          let str = L.build_bitcast strGlobal (L.pointer_type i8_t) "str_cast" builder in
+          let global_str = L.build_global_string "" "global_str" builder in
+          let str = L.build_bitcast global_str (L.pointer_type i8_t) "str_cast" builder in
           let str_loc = L.build_struct_gep alloc 0 "str_cast_loc" builder in
           let _ = L.build_store str str_loc builder in
           L.build_load alloc "" builder
@@ -168,8 +169,8 @@ let translate (structs, functions) =
 
       | SStringLit s ->
         let alloc = L.build_alloca string_t "alloc" builder in
-        let strGlobal = L.build_global_string s "strGlobal" builder in
-        let str = L.build_bitcast strGlobal (L.pointer_type i8_t) "str_cast" builder in
+        let global_str = L.build_global_string s "global_str" builder in
+        let str = L.build_bitcast global_str (L.pointer_type i8_t) "str_cast" builder in
         let str_loc = L.build_struct_gep alloc 0 "str_cast_loc" builder in
         let _ = L.build_store str str_loc builder in
         let value = L.build_load alloc "" builder in
@@ -205,8 +206,14 @@ let translate (structs, functions) =
           (match (snd v) with
             SId si ->
               ignore(L.build_store e1 (lookup map si) builder); e1, map1, builder
-          ) 
+          )
 
+      | SOpAssign(v, o, e) -> 
+        let (e1, map1, builder) = build_expr map builder e in
+        (match (snd v) with
+          SId si ->
+            ignore(L.build_store e1 (lookup map si) builder); e1, map1, builder
+        )
       | SArrayAssign (v, i, e) ->
         let rval, m', builder = build_expr map builder e in
         let name = match snd v with SId si -> si in
@@ -261,6 +268,25 @@ let translate (structs, functions) =
         let ptr = L.build_struct_gep nam_addr idx ("struct_ptr") builder in
         let value = L.build_load ptr "member_val" builder in
         (value, map, builder)
+        
+      (*| SUnop(op, e) ->
+        let (e', _, _) = build_expr map builder e in
+        (match op with
+          A.Incr ->
+            let added = L.build_nsw_add e' (L.const_int (ltype_of_typ t) 1) (L.value_name e') builder in
+            let vname vr = (match vr with
+              SId si -> si
+              | _ -> raise(Failure("Increment should only be used with variables"))
+            ) in
+            L.build_store added (lookup (vname v)) builder
+          | A.Decr ->
+            let added = L.build_nsw_add e' (L.const_int (ltype_of_typ t) (-1)) (L.value_name e') builder in 
+            let vname vr = (match vr with
+                | SId(si)  -> si
+                | _       -> raise (Error "Decrement should only be used with variables"))
+            in
+            L.build_store added (lookup (vname v)) builder
+        ) e' "unary op" builder, map, builder*)
 
       | SBinop ((A.Float, _) as e1, op, e2) -> 
         let (e1', _, _) = build_expr map builder e1
@@ -308,7 +334,23 @@ let translate (structs, functions) =
 
       | SCall ("printf", [e]) ->
         let e', _, builder = build_expr map builder e in 
-        L.build_call printf_func [| char_format_str ; e' |] "printf" builder, map, builder
+        L.build_call printf_func [| float_format_str ; e' |] "printf" builder, map, builder
+      | SCall ("printi", [e]) ->
+        let e', _, builder = build_expr map builder e in 
+        L.build_call printf_func [| int_format_str ; e' |] "printi" builder, map, builder
+      | SCall ("prints", [e]) ->
+        let e', _, builder = build_expr map builder e in 
+        L.build_call printf_func [| char_format_str ; e' |] "prints" builder, map, builder
+      
+      | SCall ("leng", [e]) ->
+        let arr_addr = (match e with _, SId si -> lookup map si) in
+        let len_loc = L.build_struct_gep arr_addr 1 "" builder in
+        let value = L.build_load len_loc "" builder in
+        value, map, builder
+      | SCall ("leng", [e]) ->
+        let (e', _, builder) = build_expr map builder e in
+        let length = L.array_length (L.type_of e') in
+        L.const_int i32_t length, map, builder
 
       | SCall (fn, args) ->
         let (fdef, fdecl) = StringMap.find fn function_decls in
@@ -368,8 +410,8 @@ let translate (structs, functions) =
             | Array Ast.Float  -> L.const_float float_t 0.0
             | Array Ast.String -> 
               let alloc = L.build_alloca string_t "alloc" builder in
-              let strGlobal = L.build_global_string "" "strGlobal" builder in
-              let str = L.build_bitcast strGlobal (L.pointer_type i8_t) "str_cast" builder in
+              let global_str = L.build_global_string "" "global_str" builder in
+              let str = L.build_bitcast global_str (L.pointer_type i8_t) "str_cast" builder in
               let str_loc = L.build_struct_gep alloc 0 "str_cast_loc" builder in
               let _ = L.build_store str str_loc builder in
               L.build_load alloc "" builder
@@ -415,7 +457,12 @@ let translate (structs, functions) =
         ignore(L.build_cond_br bool_val body_block merge_blocks pred_builder);
         L.builder_at_end context merge_blocks, m'
       | SExpr e -> ignore(build_expr map builder e); builder, map
-      | SReturn e -> ignore(build_expr map builder e); builder, map
+      | SReturn e -> 
+          ignore(match fdecl.srtyp with
+            A.Void -> L.build_ret_void builder
+            | _ -> let e', _, _ = (build_expr map builder e) in
+            L.build_ret e' builder);
+            builder, map
       | _ -> report_err "No implementation"
     in
 

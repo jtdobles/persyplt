@@ -1,3 +1,4 @@
+type uop = Incr | Decr
 type op = Add | Sub | Mult | Div | Mod | Eq | Neq | Lt | Leq | Gt | Geq | And | Or
 type typ = Int | Float | String | Bool | Void | Array of typ | Struct of string 
 type assignment = Assign 
@@ -13,10 +14,12 @@ type expr =
   | Id of string
   | Var of string
   | Assign of expr * expr
+  | OpAssign of string * op * expr
   | ArrayAssign of expr * expr * expr
   | ArrayIndex of expr * expr
   | StructAssign of expr * expr * expr
   | StructUse of expr * expr
+  (*| Unop of uop * expr*)
   | Binop of expr * op * expr
   | Call of string * expr list
 
@@ -61,6 +64,10 @@ let rec string_of_typ = function
   | Struct(t) -> t
   (* TODO: tuple, void implementation *)
 
+let string_of_uop = function
+  | Incr -> "++"
+  | Decr -> "--"
+
 (* Pretty-printing functions *)
 let string_of_op = function
   Add -> "+"
@@ -88,10 +95,12 @@ let rec string_of_expr = function
   | ArrayLit(l) -> "[" ^ (String.concat ", " (List.map string_of_expr l)) ^ "]"
   | Id(s) -> s
   | Assign(v, e) -> string_of_expr v ^ " = " ^ string_of_expr e
+  | OpAssign(v, o, e) -> v ^ " " ^ string_of_op o ^ "= " ^ string_of_expr e
   | ArrayAssign(v, i, e) -> string_of_expr v ^ "[" ^ string_of_expr i ^ "]" ^ " = " ^ string_of_expr e
   | ArrayIndex(v, i) -> string_of_expr v ^ "[" ^ string_of_expr i ^ "]"
   | StructAssign(v, m, e) -> string_of_expr v ^ "." ^ string_of_expr m ^ " = " ^ string_of_expr e ^ ";"
   | StructUse(v, m) -> string_of_expr v ^ "." ^ string_of_expr m
+  (*| Unop(o, e) -> string_of_uop o ^ string_of_expr e*)
   | Binop(e1, o, e2) ->
     string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
   | Call(f, el) ->
@@ -111,7 +120,7 @@ let rec string_of_stmt = function
   | Case(e, s) -> "case :" ^ string_of_expr e ^ ")\n" ^ string_of_stmt s
   | Default(s) -> "default: " ^ string_of_stmt s*)
   | Expr(expr) -> string_of_expr expr ^ ";\n"
-  | Return(expr) -> "return " ^ string_of_expr expr ^ ";\n"
+  | Return(expr) -> "return " ^ string_of_expr expr
   | _ -> "no matching stmt"
   (* TODO: switch/case/default, tuple *)
 
